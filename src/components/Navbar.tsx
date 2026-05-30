@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 const NAV_ITEMS = [
@@ -34,29 +35,18 @@ export default function Navbar() {
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', flexShrink: 0 }}>
-          <div
-            style={{
-              width: 26,
-              height: 26,
-              background: '#00e676',
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 900,
-              fontSize: 13,
-              color: '#000',
-            }}
-          >
-            M
-          </div>
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#fff', letterSpacing: 0.4 }}>
-            MoneyFi
-          </span>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+          <Image
+            src="/moneyfi-logo.png"
+            alt="MoneyFi"
+            height={28}
+            width={120}
+            style={{ height: 28, width: 'auto', objectFit: 'contain' }}
+            priority
+          />
         </Link>
 
-        {/* Nav tabs — always visible */}
+        {/* Nav tabs */}
         <div style={{ display: 'flex', gap: 3 }}>
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href
@@ -87,7 +77,7 @@ export default function Navbar() {
 
         {/* Right side */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          {/* CREATE VAULT — always show, label hidden on very small screens */}
+          {/* CREATE VAULT */}
           <Link
             href="/create"
             style={{
@@ -103,7 +93,7 @@ export default function Navbar() {
             }}
           >
             <span className="nav-create-label">+ CREATE VAULT</span>
-            <span style={{ display: 'inline' }} className="hide-on-desktop">+</span>
+            <span className="hide-on-desktop">+</span>
           </Link>
 
           {/* CONNECT WALLET — hidden on mobile */}
