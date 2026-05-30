@@ -25,6 +25,11 @@
   box-sizing: border-box;
 }
 
+/* Hide native cursor when custom cursor is active (set dynamically by JS on pointer:fine devices) */
+@media (pointer: fine) {
+  *, *:hover { cursor: none !important; }
+}
+
 body {
   background-color: var(--bg-base);
   color: var(--text-primary);
