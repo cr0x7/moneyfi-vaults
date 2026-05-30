@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
   { label: 'VAULT', href: '/' },
@@ -16,7 +15,7 @@ export default function Navbar() {
   return (
     <nav
       style={{
-        background: 'rgba(10,10,10,0.92)',
+        background: 'rgba(10,10,10,0.95)',
         borderBottom: '1px solid #1a1a1a',
         backdropFilter: 'blur(12px)',
         position: 'sticky',
@@ -25,41 +24,40 @@ export default function Navbar() {
       }}
     >
       <div
+        className="page-wrap"
         style={{
-          maxWidth: 1280,
-          margin: '0 auto',
-          padding: '0 24px',
-          height: 56,
+          height: 52,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 8,
         }}
       >
         {/* Logo */}
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', flexShrink: 0 }}>
           <div
             style={{
-              width: 28,
-              height: 28,
+              width: 26,
+              height: 26,
               background: '#00e676',
               borderRadius: 6,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 900,
-              fontSize: 14,
+              fontSize: 13,
               color: '#000',
             }}
           >
             M
           </div>
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#fff', letterSpacing: 0.5 }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#fff', letterSpacing: 0.4 }}>
             MoneyFi
           </span>
         </Link>
 
-        {/* Nav tabs */}
-        <div style={{ display: 'flex', gap: 4 }}>
+        {/* Nav tabs — always visible */}
+        <div style={{ display: 'flex', gap: 3 }}>
           {NAV_ITEMS.map((item) => {
             const active = pathname === item.href
             return (
@@ -67,17 +65,18 @@ export default function Navbar() {
                 key={item.href}
                 href={item.href}
                 style={{
-                  padding: '6px 16px',
+                  padding: '5px 10px',
                   borderRadius: 6,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: 600,
-                  letterSpacing: 0.8,
+                  letterSpacing: 0.7,
                   textDecoration: 'none',
                   background: active ? '#00e676' : 'transparent',
                   color: active ? '#000' : '#666',
                   border: '1px solid',
-                  borderColor: active ? '#00e676' : '#222',
+                  borderColor: active ? '#00e676' : '#1e1e1e',
                   transition: 'all 0.2s',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {item.label}
@@ -87,51 +86,54 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          {/* CREATE VAULT — always show, label hidden on very small screens */}
           <Link
             href="/create"
             style={{
-              padding: '6px 16px',
+              padding: '5px 12px',
               background: '#00e676',
               color: '#000',
               borderRadius: 6,
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 700,
               textDecoration: 'none',
               letterSpacing: 0.5,
+              whiteSpace: 'nowrap',
             }}
           >
-            + CREATE VAULT
+            <span className="nav-create-label">+ CREATE VAULT</span>
+            <span style={{ display: 'inline' }} className="hide-on-desktop">+</span>
           </Link>
+
+          {/* CONNECT WALLET — hidden on mobile */}
           <button
+            className="nav-connect"
             style={{
-              padding: '6px 14px',
+              padding: '5px 12px',
               background: 'transparent',
               border: '1px solid #333',
               borderRadius: 6,
               color: '#888',
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 600,
               cursor: 'pointer',
-              display: 'flex',
               alignItems: 'center',
               gap: 6,
               letterSpacing: 0.5,
+              whiteSpace: 'nowrap',
             }}
           >
             CONNECT WALLET
           </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+
+          {/* LIVE dot */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <div
               className="live-dot"
-              style={{
-                width: 6,
-                height: 6,
-                background: '#00e676',
-                borderRadius: '50%',
-              }}
+              style={{ width: 6, height: 6, background: '#00e676', borderRadius: '50%' }}
             />
-            <span style={{ fontSize: 11, color: '#00e676', fontWeight: 600 }}>LIVE</span>
+            <span style={{ fontSize: 10, color: '#00e676', fontWeight: 600 }}>LIVE</span>
           </div>
         </div>
       </div>

@@ -28,15 +28,15 @@ export default function VaultDetailPage() {
   const tvlChangePositive = vault.tvlChange >= 0
 
   return (
-    <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 24px 0' }}>
+    <div className="page-wrap" style={{ paddingTop: 20, paddingBottom: 0 }}>
       {/* Breadcrumb */}
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#555' }}>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#555' }}>
         <Link href="/" style={{ color: '#555', textDecoration: 'none' }}>Vaults</Link>
         <span>/</span>
-        <span style={{ color: '#fff' }}>{vault.name}</span>
+        <span style={{ color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vault.name}</span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
+      <div className="detail-grid">
         {/* Left column */}
         <div>
           {/* Vault header */}
@@ -64,7 +64,7 @@ export default function VaultDetailPage() {
                 </span>
               )}
             </div>
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: 900, color: '#fff', marginBottom: 8, lineHeight: 1.2 }}>
               {vault.name}
             </h1>
             <p style={{ fontSize: 14, color: '#666', lineHeight: 1.6 }}>
@@ -73,7 +73,7 @@ export default function VaultDetailPage() {
           </div>
 
           {/* Key metrics */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+          <div className="metrics-grid">
             <div className="card" style={{ padding: '16px 14px' }}>
               <div style={{ fontSize: 9, color: '#555', fontWeight: 600, letterSpacing: 1, marginBottom: 6 }}>TOTAL APY</div>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#00e676', lineHeight: 1 }}>
@@ -162,15 +162,15 @@ export default function VaultDetailPage() {
                       >
                         {tx.type === 'DEPOSIT' ? '↓' : tx.type === 'WITHDRAW' ? '↑' : '→'}
                       </div>
-                      <div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#ccc', marginBottom: 2 }}>
-                          {tx.type === 'DEPOSIT' ? `Deposit ${tx.amount.toFixed(2)} ${tx.token} to MoneyFi` :
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#ccc', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {tx.type === 'DEPOSIT' ? `Deposit ${tx.amount.toFixed(2)} ${tx.token}` :
                            tx.type === 'WITHDRAW' ? `Withdraw ${tx.amount.toFixed(2)} ${tx.token}` :
-                           `Transfer ${tx.amount.toFixed(2)} ${tx.token} → ${tx.to}${tx.strategy ? ` - ${tx.strategy}` : ''}`}
+                           `Transfer ${tx.amount.toFixed(2)} ${tx.token} → ${tx.to}`}
                         </div>
-                        <div style={{ fontSize: 10, color: '#444' }}>
+                        <div style={{ fontSize: 10, color: '#444', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {tx.from && <span>{tx.from}</span>}
-                          <span style={{ marginLeft: 8 }}>{formatDate(tx.timestamp)}</span>
+                          <span style={{ marginLeft: 6 }}>{formatDate(tx.timestamp)}</span>
                         </div>
                       </div>
                     </div>
@@ -191,7 +191,7 @@ export default function VaultDetailPage() {
         </div>
 
         {/* Right column — Deposit Panel */}
-        <div style={{ position: 'sticky', top: 72, alignSelf: 'start' }}>
+        <div className="deposit-sticky">
           <DepositPanel vault={vault} position={position} />
         </div>
       </div>

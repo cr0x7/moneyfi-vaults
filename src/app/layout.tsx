@@ -18,24 +18,28 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main>{children}</main>
         <footer
+          className="page-wrap"
           style={{
             borderTop: '1px solid #1a1a1a',
-            padding: '16px 24px',
+            paddingTop: 16,
+            paddingBottom: 16,
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginTop: 80,
+            flexDirection: 'column',
+            gap: 8,
+            marginTop: 60,
           }}
         >
-          <span style={{ fontSize: 11, color: '#333' }}>
-            ✓ Audited by MOVEBIT · © 2025 BY SOLUTIONS LTD. · GRAND CAYMAN, CAYMAN ISLANDS
-          </span>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {['Terms', 'Privacy', 'Docs'].map((l) => (
-              <a key={l} href="#" style={{ fontSize: 11, color: '#444', textDecoration: 'none' }}>
-                {l}
-              </a>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ fontSize: 10, color: '#2a2a2a' }}>
+              ✓ Audited by MOVEBIT · © 2025 BY SOLUTIONS LTD.
+            </span>
+            <div style={{ display: 'flex', gap: 16 }}>
+              {['Terms', 'Privacy', 'Docs'].map((l) => (
+                <a key={l} href="#" style={{ fontSize: 11, color: '#444', textDecoration: 'none' }}>
+                  {l}
+                </a>
+              ))}
+            </div>
           </div>
         </footer>
       </body>
