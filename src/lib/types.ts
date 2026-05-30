@@ -1,0 +1,93 @@
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'ADVANCED'
+
+export type StrategyType =
+  | 'STABLE_YIELD'
+  | 'EMA_MIRROR'
+  | 'FIBONACCI'
+  | 'EMA_CROSSOVER'
+  | 'ORB'
+  | 'GRID_DCA'
+  | 'MARKOV'
+  | 'MFR_DCA'
+  | 'CUSTOM'
+
+export type TokenSymbol = 'USDT' | 'USDC' | 'APT' | 'BTC' | 'ETH'
+
+export interface ProtocolAllocation {
+  name: string
+  color: string
+  percentage: number
+}
+
+export interface APYDataPoint {
+  date: string
+  apy: number
+  base: number
+  boost: number
+}
+
+export interface TVLDataPoint {
+  date: string
+  tvl: number
+}
+
+export interface Transaction {
+  id: string
+  type: 'DEPOSIT' | 'WITHDRAW' | 'TRANSFER' | 'COMPOUND'
+  amount: number
+  token: TokenSymbol
+  from?: string
+  to?: string
+  strategy?: string
+  timestamp: string
+  value: number
+}
+
+export interface Vault {
+  id: string
+  name: string
+  description: string
+  strategy: StrategyType
+  riskLevel: RiskLevel
+  apy: number
+  baseApy: number
+  boostApy: number
+  tvl: number
+  tvlChange: number
+  minDeposit: number
+  maxDeposit?: number
+  supportedTokens: TokenSymbol[]
+  protocols: ProtocolAllocation[]
+  apyHistory: APYDataPoint[]
+  tvlHistory: TVLDataPoint[]
+  transactions: Transaction[]
+  audited: boolean
+  autoCompound: boolean
+  noHiddenFees: boolean
+  tags: string[]
+  featured?: boolean
+  createdAt: string
+  npoints?: number
+}
+
+export interface UserPosition {
+  vaultId: string
+  deposited: number
+  token: TokenSymbol
+  depositedAt: string
+  currentValue: number
+  earnedYield: number
+  unrealizedPnL: number
+  unrealizedPnLPercent: number
+  share: number
+}
+
+export interface CreateVaultConfig {
+  name: string
+  strategy: StrategyType
+  riskLevel: RiskLevel
+  initialDeposit: number
+  token: TokenSymbol
+  autoCompound: boolean
+  targetApy?: number
+}
