@@ -270,6 +270,36 @@ export const VAULTS: Vault[] = [
     createdAt: '2024-11-05',
     npoints: 3560,
   },
+  {
+    id: 'delta-neutral',
+    name: 'Delta Neutral Trading Vault',
+    description:
+      'Market-neutral yield strategy that simultaneously holds long and short positions to eliminate directional price risk. Earns from funding rates, trading fees, and arbitrage spreads — profit regardless of whether markets go up or down.',
+    strategy: 'DELTA_NEUTRAL',
+    riskLevel: 'MEDIUM',
+    apy: 27.6,
+    baseApy: 19.8,
+    boostApy: 7.8,
+    tvl: 6430000,
+    tvlChange: 3.52,
+    minDeposit: 200,
+    supportedTokens: ['USDT', 'USDC'],
+    protocols: [
+      { name: 'Hyperion', color: '#22c55e', percentage: 40.0 },
+      { name: 'Moar', color: '#a855f7', percentage: 35.0 },
+      { name: 'Aries Markets', color: '#ef4444', percentage: 25.0 },
+    ],
+    apyHistory: generateAPYHistory(19, 8, 90),
+    tvlHistory: generateTVLHistory(6430000, 180),
+    transactions: [],
+    audited: true,
+    autoCompound: true,
+    noHiddenFees: true,
+    tags: ['Delta Neutral', 'Market Neutral', 'Hedged', 'Intermediate'],
+    featured: true,
+    createdAt: '2025-03-15',
+    npoints: 4890,
+  },
 ]
 
 export const USER_POSITIONS: UserPosition[] = [

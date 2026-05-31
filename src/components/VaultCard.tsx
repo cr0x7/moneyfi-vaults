@@ -18,6 +18,7 @@ const STRATEGY_LABEL: Record<string, string> = {
   GRID_DCA: 'Grid DCA',
   MARKOV: 'Markov Chain',
   MFR_DCA: 'MFR DCA',
+  DELTA_NEUTRAL: 'Delta Neutral',
   CUSTOM: 'Custom',
 }
 

@@ -9,6 +9,7 @@ export type StrategyType =
   | 'GRID_DCA'
   | 'MARKOV'
   | 'MFR_DCA'
+  | 'DELTA_NEUTRAL'
   | 'CUSTOM'
 
 export type TokenSymbol = 'USDT' | 'USDC' | 'APT' | 'BTC' | 'ETH'

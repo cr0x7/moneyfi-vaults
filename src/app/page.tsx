@@ -16,6 +16,7 @@ const STRATEGY_FILTERS = [
   { id: 'MARKOV', label: 'Markov' },
   { id: 'ORB', label: 'Open Range' },
   { id: 'MFR_DCA', label: 'MFR DCA' },
+  { id: 'DELTA_NEUTRAL', label: 'Delta Neutral' },
 ]
 
 const RISK_FILTERS = [

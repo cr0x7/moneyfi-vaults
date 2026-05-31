@@ -14,6 +14,7 @@ const STRATEGY_OPTIONS: { id: StrategyType; name: string; description: string; b
   { id: 'MARKOV', name: 'Markov Chain', description: 'Statistical probability-based high-frequency yield extraction', baseApy: 35, risk: 'ADVANCED' },
   { id: 'ORB', name: 'Open Range Breakout', description: 'Intraday breakout capture with tight risk management', baseApy: 20, risk: 'HIGH' },
   { id: 'MFR_DCA', name: 'MFR DCA Trend', description: 'Trend + Fibonacci pullback DCA for risk-adjusted returns', baseApy: 18, risk: 'MEDIUM' },
+  { id: 'DELTA_NEUTRAL', name: 'Delta Neutral', description: 'Simultaneous long/short hedging to earn funding rates & fees with zero directional risk', baseApy: 26, risk: 'MEDIUM' },
 ]
 
 const STEP_LABELS = ['Strategy', 'Configure', 'Deposit', 'Preview']
