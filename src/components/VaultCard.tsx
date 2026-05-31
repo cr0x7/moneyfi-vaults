@@ -135,22 +135,24 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
           </div>
         </div>
 
-        {/* Protocol allocation bar */}
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', display: 'flex' }}>
-            {vault.protocols.map((p) => (
-              <div key={p.name} style={{ width: `${p.percentage}%`, background: p.color }} />
-            ))}
+        {/* Protocol allocation bar — LP only */}
+        {vault.category === 'LP' && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', display: 'flex' }}>
+              {vault.protocols.map((p) => (
+                <div key={p.name} style={{ width: `${p.percentage}%`, background: p.color }} />
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
+              {vault.protocols.slice(0, 3).map((p) => (
+                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color }} />
+                  <span style={{ fontSize: 10, color: '#555' }}>{p.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
-            {vault.protocols.slice(0, 3).map((p) => (
-              <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color }} />
-                <span style={{ fontSize: 10, color: '#555' }}>{p.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Trust badges */}
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
