@@ -1,5 +1,7 @@
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'ADVANCED'
 
+export type VaultCategory = 'LP' | 'TRADING' | 'DELTA_NEUTRAL'
+
 export type StrategyType =
   | 'STABLE_YIELD'
   | 'EMA_MIRROR'
@@ -48,6 +50,7 @@ export interface Vault {
   id: string
   name: string
   description: string
+  category: VaultCategory
   strategy: StrategyType
   riskLevel: RiskLevel
   apy: number

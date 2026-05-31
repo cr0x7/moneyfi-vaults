@@ -273,6 +273,16 @@ body {
 .hide-on-desktop { display: inline; }
 @media (min-width: 480px) { .hide-on-desktop { display: none; } }
 
+/* Category cards: 1-col mobile → 3-col desktop */
+.category-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 640px) {
+  .category-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 /* Page padding: tighter on mobile */
 .page-wrap {
   max-width: 1280px;
