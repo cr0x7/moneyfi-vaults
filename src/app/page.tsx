@@ -7,61 +7,34 @@ import { VAULTS, USER_POSITIONS } from '@/data/vaults'
 import { formatCurrency } from '@/lib/utils'
 import { VaultCategory } from '@/lib/types'
 
-// ─── Category definitions ────────────────────────────────────────────────────
+// ─── Category metadata (used in filter tabs + context line) ─────────────────
 
-const CATEGORIES: {
-  id: VaultCategory | 'ALL'
-  label: string
-  tagline: string
-  description: string
-  howItWorks: string
-  apyRange: string
-  riskRange: string
-  color: string
-  bg: string
-  icon: string
-}[] = [
-  {
-    id: 'LP',
+const CATEGORY_META: Record<VaultCategory, { label: string; icon: string; color: string; bg: string; tagline: string }> = {
+  LP: {
     label: 'Liquidity Provider',
-    tagline: 'Earn from every swap',
-    description: 'Deposit stablecoins into DEX liquidity pools across Aptos protocols. Your funds power trades and you collect the fees — no directional exposure, no active trading.',
-    howItWorks: 'Funds auto-route across Tapp Exchange, Moar, Hyperion & Aries Markets. Smart rebalancing captures the highest LP fee rate at all times.',
-    apyRange: '15 – 30%',
-    riskRange: 'LOW',
+    icon: '💧',
     color: '#00e676',
     bg: '#0a1a0f',
-    icon: '💧',
+    tagline: 'Provide liquidity to Aptos DEX protocols — earn trading fees automatically with minimal directional risk.',
   },
-  {
-    id: 'TRADING',
+  TRADING: {
     label: 'Trading Strategies',
-    tagline: 'Algo-powered market returns',
-    description: 'Automated trading strategies — EMA, Fibonacci, Grid DCA, ORB, Markov — that actively trade the market to generate returns. Higher upside, higher variance.',
-    howItWorks: 'Algorithms execute trades based on technical signals (EMA crossovers, Fibonacci retracements, grid levels). Profits are compounded automatically.',
-    apyRange: '15 – 38%',
-    riskRange: 'LOW – ADVANCED',
+    icon: '📈',
     color: '#f97316',
     bg: '#1a0e00',
-    icon: '📈',
+    tagline: 'Automated algo strategies (EMA, Fibonacci, Grid, ORB, Markov) that actively trade the market for higher returns.',
   },
-  {
-    id: 'DELTA_NEUTRAL',
+  DELTA_NEUTRAL: {
     label: 'Delta Neutral',
-    tagline: 'Profit whether up or down',
-    description: 'Market-neutral positions that earn regardless of price direction. Long + short positions cancel out directional risk — profit comes from funding rate collection on HyperLiquid.',
-    howItWorks: 'Equal long/short perpetual positions opened on HyperLiquid. When the funding rate is positive, shorts collect from longs — that spread is your yield.',
-    apyRange: '20 – 35%',
-    riskRange: 'MEDIUM',
+    icon: '⚖️',
     color: '#a78bfa',
     bg: '#0d0a1a',
-    icon: '⚖️',
+    tagline: 'Equal long + short perpetuals on HyperLiquid — earn funding rates regardless of market direction.',
   },
-]
+}
 
-const RISK_FILTERS = ['ALL', 'LOW', 'MEDIUM', 'HIGH', 'ADVANCED'] as const
-
-const SORT_OPTIONS = [
+const RISK_FILTERS  = ['ALL', 'LOW', 'MEDIUM', 'HIGH', 'ADVANCED'] as const
+const SORT_OPTIONS  = [
   { id: 'apy',    label: 'Top APY' },
   { id: 'tvl',    label: 'Largest TVL' },
   { id: 'newest', label: 'Newest' },
@@ -71,15 +44,14 @@ const SORT_OPTIONS = [
 
 export default function VaultsPage() {
   const [category, setCategory] = useState<VaultCategory | 'ALL'>('ALL')
-  const [risk, setRisk]         = useState<string>('ALL')
-  const [search, setSearch]     = useState('')
-  const [sort, setSort]         = useState<'apy' | 'tvl' | 'newest'>('apy')
-  const [expandedCat, setExpandedCat] = useState<VaultCategory | null>(null)
+  const [risk,     setRisk]     = useState<string>('ALL')
+  const [search,   setSearch]   = useState('')
+  const [sort,     setSort]     = useState<'apy' | 'tvl' | 'newest'>('apy')
 
-  const totalTVL          = VAULTS.reduce((s, v) => s + v.tvl, 0)
-  const userTotalValue    = USER_POSITIONS.reduce((s, p) => s + p.currentValue, 0)
-  const userTotalPnL      = USER_POSITIONS.reduce((s, p) => s + p.unrealizedPnL, 0)
-  const maxAPY            = VAULTS.reduce((m, v) => Math.max(m, v.apy), 0)
+  const totalTVL       = VAULTS.reduce((s, v) => s + v.tvl, 0)
+  const userTotalValue = USER_POSITIONS.reduce((s, p) => s + p.currentValue, 0)
+  const userTotalPnL   = USER_POSITIONS.reduce((s, p) => s + p.unrealizedPnL, 0)
+  const maxAPY         = VAULTS.reduce((m, v) => Math.max(m, v.apy), 0)
 
   const filteredVaults = VAULTS
     .filter((v) => {
@@ -89,24 +61,19 @@ export default function VaultsPage() {
       return true
     })
     .sort((a, b) => {
-      if (sort === 'apy') return b.apy - a.apy
-      if (sort === 'tvl') return b.tvl - a.tvl
+      if (sort === 'apy')    return b.apy - a.apy
+      if (sort === 'tvl')    return b.tvl - a.tvl
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 
   const userPositionMap = Object.fromEntries(USER_POSITIONS.map((p) => [p.vaultId, p.currentValue]))
-
-  const catVaultCount = (id: VaultCategory) => VAULTS.filter(v => v.category === id).length
-  const catAvgAPY     = (id: VaultCategory) => {
-    const vs = VAULTS.filter(v => v.category === id)
-    return vs.reduce((s, v) => s + v.apy, 0) / vs.length
-  }
+  const activeCatMeta   = category !== 'ALL' ? CATEGORY_META[category] : null
 
   return (
     <div className="page-wrap">
 
       {/* ── Hero ─────────────────────────────────────────────── */}
-      <div style={{ paddingTop: 36, paddingBottom: 32 }}>
+      <div style={{ paddingTop: 36, paddingBottom: 28 }}>
         <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 2, marginBottom: 10 }}>
           MONEYFI · APTOS VAULTS
         </div>
@@ -141,135 +108,9 @@ export default function VaultsPage() {
         </div>
       </div>
 
-      {/* ── Category selector cards ───────────────────────────── */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: '#444', fontWeight: 600, letterSpacing: 1.5, marginBottom: 14 }}>
-          SELECT STRATEGY TYPE
-        </div>
-        <div className="category-grid">
-          {CATEGORIES.map((cat) => {
-            const active  = category === cat.id
-            const vCount  = catVaultCount(cat.id as VaultCategory)
-            const avgAPY  = catAvgAPY(cat.id as VaultCategory)
-            const showExp = expandedCat === cat.id
-
-            return (
-              <div
-                key={cat.id}
-                onClick={() => {
-                  setCategory(active ? 'ALL' : cat.id as VaultCategory)
-                  setExpandedCat(showExp ? null : cat.id as VaultCategory)
-                }}
-                style={{
-                  background: active ? cat.bg : '#0f0f0f',
-                  border: `1px solid ${active ? cat.color + '60' : '#1e1e1e'}`,
-                  borderRadius: 12,
-                  padding: '16px 16px',
-                  cursor: 'pointer',
-                  transition: 'all 0.25s',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Glow accent when active */}
-                {active && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-                    background: cat.color, borderRadius: '12px 12px 0 0',
-                  }} />
-                )}
-
-                {/* Icon + label row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                  <div style={{ fontSize: 22 }}>{cat.icon}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, color: active ? cat.color : '#444',
-                      background: active ? cat.color + '20' : '#1a1a1a',
-                      padding: '2px 8px', borderRadius: 20, letterSpacing: 0.5,
-                    }}>
-                      {vCount} vault{vCount !== 1 ? 's' : ''}
-                    </span>
-                    {active && (
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: cat.color }} />
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ fontSize: 14, fontWeight: 800, color: active ? '#fff' : '#aaa', marginBottom: 2, lineHeight: 1.2 }}>
-                  {cat.label}
-                </div>
-                <div style={{ fontSize: 11, color: active ? cat.color : '#555', fontWeight: 600, marginBottom: 10 }}>
-                  {cat.tagline}
-                </div>
-
-                {/* Stats row */}
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 9, color: '#555', letterSpacing: 0.8 }}>AVG APY</div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: active ? cat.color : '#666' }}>
-                      {avgAPY.toFixed(1)}%
-                    </div>
-                  </div>
-                  <div style={{ width: 1, background: '#222' }} />
-                  <div>
-                    <div style={{ fontSize: 9, color: '#555', letterSpacing: 0.8 }}>RISK</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: active ? '#ccc' : '#555' }}>
-                      {cat.riskRange}
-                    </div>
-                  </div>
-                  <div style={{ width: 1, background: '#222' }} />
-                  <div>
-                    <div style={{ fontSize: 9, color: '#555', letterSpacing: 0.8 }}>APY RANGE</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: active ? '#ccc' : '#555' }}>
-                      {cat.apyRange}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Expanded explanation */}
-                {showExp && (
-                  <div style={{
-                    marginTop: 14, paddingTop: 14,
-                    borderTop: `1px solid ${cat.color}30`,
-                  }}>
-                    <p style={{ fontSize: 12, color: '#999', lineHeight: 1.6, marginBottom: 8 }}>
-                      {cat.description}
-                    </p>
-                    <div style={{ background: '#0a0a0a', borderRadius: 6, padding: '8px 10px' }}>
-                      <div style={{ fontSize: 9, color: cat.color, fontWeight: 700, letterSpacing: 0.8, marginBottom: 4 }}>
-                        HOW IT WORKS
-                      </div>
-                      <p style={{ fontSize: 11, color: '#666', lineHeight: 1.6 }}>
-                        {cat.howItWorks}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* "All" toggle */}
-        {category !== 'ALL' && (
-          <div style={{ marginTop: 10, textAlign: 'center' }}>
-            <button
-              onClick={() => { setCategory('ALL'); setExpandedCat(null) }}
-              style={{
-                background: 'none', border: 'none', color: '#555', fontSize: 12,
-                cursor: 'pointer', textDecoration: 'underline',
-              }}
-            >
-              ✕ Clear filter — show all {VAULTS.length} vaults
-            </button>
-          </div>
-        )}
-      </div>
-
       {/* ── My Active Positions ───────────────────────────────── */}
       {USER_POSITIONS.length > 0 && (
-        <div style={{ marginBottom: 32, marginTop: 28 }}>
+        <div style={{ marginBottom: 32 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h2 style={{ fontSize: 12, fontWeight: 700, color: '#555', letterSpacing: 1.2 }}>
               MY ACTIVE POSITIONS
@@ -280,29 +121,25 @@ export default function VaultsPage() {
           </div>
           <div className="positions-grid">
             {USER_POSITIONS.map((pos) => {
-              const vault = VAULTS.find((v) => v.id === pos.vaultId)!
-              const catMeta = CATEGORIES.find(c => c.id === vault.category)
+              const vault   = VAULTS.find((v) => v.id === pos.vaultId)!
+              const catMeta = CATEGORY_META[vault.category]
               return (
                 <Link key={pos.vaultId} href={`/vault/${pos.vaultId}`} style={{ textDecoration: 'none', display: 'flex' }}>
                   <div
                     className="card card-hover"
                     style={{
                       padding: 14,
-                      borderColor: catMeta?.color ? catMeta.color + '30' : '#1a3a2a',
-                      background: catMeta?.bg ?? '#0a1a0f',
+                      borderColor: catMeta.color + '30',
+                      background: catMeta.bg,
                       display: 'flex', flexDirection: 'column', width: '100%',
                     }}
                   >
                     {/* Category tag */}
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 4,
-                      fontSize: 10, color: catMeta?.color ?? '#888',
-                      fontWeight: 600, marginBottom: 6,
-                    }}>
-                      {catMeta?.icon} {catMeta?.label}
+                    <div style={{ fontSize: 10, color: catMeta.color, fontWeight: 600, marginBottom: 6 }}>
+                      {catMeta.icon} {catMeta.label}
                     </div>
 
-                    {/* Name row */}
+                    {/* Vault name + APY */}
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>
                       {vault.name}
                     </div>
@@ -333,10 +170,10 @@ export default function VaultsPage() {
                       </div>
                     </div>
 
-                    {/* Stats row — always at bottom */}
+                    {/* Stats — pinned to bottom */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 'auto' }}>
                       {[
-                        { label: 'DEPOSITED', value: formatCurrency(pos.deposited), color: '#888' },
+                        { label: 'DEPOSITED',    value: formatCurrency(pos.deposited),    color: '#888' },
                         { label: 'EARNED YIELD', value: `+${formatCurrency(pos.earnedYield)}`, color: '#00e676' },
                       ].map((s) => (
                         <div key={s.label}>
@@ -354,97 +191,128 @@ export default function VaultsPage() {
       )}
 
       {/* ── Vault list ────────────────────────────────────────── */}
-      <div id="vaults" style={{ marginTop: 28 }}>
+      <div id="vaults">
 
-        {/* Section header */}
-        <div className="vaults-header">
-          <div>
+        {/* Header row: title + category tabs + sort */}
+        <div style={{ marginBottom: 14 }}>
+          {/* Top: title + sort */}
+          <div className="vaults-header" style={{ marginBottom: 10 }}>
             <h2 style={{ fontSize: 14, fontWeight: 700, color: '#fff', letterSpacing: 0.5 }}>
-              {category === 'ALL'
-                ? 'ALL VAULTS'
-                : CATEGORIES.find(c => c.id === category)?.label.toUpperCase() + ' VAULTS'}
+              {activeCatMeta
+                ? <>{activeCatMeta.icon} {activeCatMeta.label.toUpperCase()} VAULTS</>
+                : 'ALL VAULTS'
+              }
               <span style={{ color: '#333', fontSize: 12, fontWeight: 400, marginLeft: 8 }}>
                 {filteredVaults.length} listed
               </span>
             </h2>
-          </div>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {SORT_OPTIONS.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => setSort(s.id)}
-                style={{
-                  padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
-                  cursor: 'pointer', border: 'none',
-                  background: sort === s.id ? '#00e676' : '#1a1a1a',
-                  color: sort === s.id ? '#000' : '#555',
-                  transition: 'all 0.15s', whiteSpace: 'nowrap',
-                }}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="filters-bar" style={{ marginBottom: 20 }}>
-          {/* Search */}
-          <div style={{
-            display: 'flex', alignItems: 'center', background: '#111',
-            border: '1px solid #222', borderRadius: 8, padding: '7px 12px', gap: 8,
-          }}>
-            <span style={{ fontSize: 13, color: '#444' }}>🔍</span>
-            <input
-              type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search vaults..."
-              style={{ background: 'none', border: 'none', outline: 'none', fontSize: 13, color: '#fff', width: '100%', minWidth: 0 }}
-            />
+            <div style={{ display: 'flex', gap: 4 }}>
+              {SORT_OPTIONS.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => setSort(s.id)}
+                  style={{
+                    padding: '4px 10px', borderRadius: 4, fontSize: 11, fontWeight: 600,
+                    cursor: 'pointer', border: 'none',
+                    background: sort === s.id ? '#00e676' : '#1a1a1a',
+                    color: sort === s.id ? '#000' : '#555',
+                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Risk chips */}
-          <div className="filter-chips">
-            {RISK_FILTERS.map((r) => (
+          {/* Filter row: category tabs + risk chips + search */}
+          <div className="filters-bar">
+            {/* Category tabs */}
+            <div className="filter-chips">
               <button
-                key={r}
-                onClick={() => setRisk(r)}
+                onClick={() => setCategory('ALL')}
                 style={{
                   flexShrink: 0, padding: '5px 12px', borderRadius: 6,
                   fontSize: 11, fontWeight: 600, cursor: 'pointer',
                   border: '1px solid',
-                  borderColor: risk === r ? '#888' : '#222',
-                  background: risk === r ? '#1a1a1a' : 'transparent',
-                  color: risk === r ? '#fff' : '#555',
+                  borderColor: category === 'ALL' ? '#555' : '#222',
+                  background: category === 'ALL' ? '#1e1e1e' : 'transparent',
+                  color: category === 'ALL' ? '#fff' : '#555',
                   transition: 'all 0.15s', whiteSpace: 'nowrap',
                 }}
               >
-                {r === 'ALL' ? 'All Risks' : r}
+                All Types
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Category context banner (shown when a category is selected) */}
-        {category !== 'ALL' && (() => {
-          const meta = CATEGORIES.find(c => c.id === category)!
-          return (
-            <div style={{
-              background: meta.bg, border: `1px solid ${meta.color}30`,
-              borderRadius: 10, padding: '12px 16px', marginBottom: 20,
-              display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-            }}>
-              <span style={{ fontSize: 20 }}>{meta.icon}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: meta.color, marginBottom: 2 }}>
-                  {meta.label}
-                </div>
-                <div style={{ fontSize: 12, color: '#666', lineHeight: 1.5 }}>
-                  {meta.description}
-                </div>
-              </div>
+              {(Object.entries(CATEGORY_META) as [VaultCategory, typeof CATEGORY_META[VaultCategory]][]).map(([id, meta]) => {
+                const active = category === id
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setCategory(active ? 'ALL' : id)}
+                    style={{
+                      flexShrink: 0, padding: '5px 12px', borderRadius: 6,
+                      fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                      border: '1px solid',
+                      borderColor: active ? meta.color + '80' : '#222',
+                      background: active ? meta.bg : 'transparent',
+                      color: active ? meta.color : '#555',
+                      transition: 'all 0.15s', whiteSpace: 'nowrap',
+                      display: 'flex', alignItems: 'center', gap: 4,
+                    }}
+                  >
+                    <span>{meta.icon}</span> {meta.label}
+                  </button>
+                )
+              })}
             </div>
-          )
-        })()}
+
+            {/* Risk chips */}
+            <div className="filter-chips">
+              {RISK_FILTERS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setRisk(r)}
+                  style={{
+                    flexShrink: 0, padding: '5px 12px', borderRadius: 6,
+                    fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                    border: '1px solid',
+                    borderColor: risk === r ? '#888' : '#222',
+                    background: risk === r ? '#1a1a1a' : 'transparent',
+                    color: risk === r ? '#fff' : '#555',
+                    transition: 'all 0.15s', whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r === 'ALL' ? 'All Risks' : r}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div style={{
+              display: 'flex', alignItems: 'center', background: '#111',
+              border: '1px solid #222', borderRadius: 8, padding: '6px 12px', gap: 8,
+            }}>
+              <span style={{ fontSize: 12, color: '#444' }}>🔍</span>
+              <input
+                type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search vaults..."
+                style={{ background: 'none', border: 'none', outline: 'none', fontSize: 12, color: '#fff', width: '100%', minWidth: 0 }}
+              />
+            </div>
+          </div>
+
+          {/* Category description line — 1 line only, appears when filtered */}
+          {activeCatMeta && (
+            <div style={{
+              fontSize: 12, color: '#555', lineHeight: 1.5,
+              padding: '8px 12px',
+              borderLeft: `2px solid ${activeCatMeta.color}60`,
+              marginTop: 4,
+            }}>
+              {activeCatMeta.tagline}
+            </div>
+          )}
+        </div>
 
         {/* Grid */}
         {filteredVaults.length > 0 ? (

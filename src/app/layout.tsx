@@ -10,6 +10,11 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 export const metadata: Metadata = {
   title: 'MoneyFi — Earn Yield Automatically',
   description: 'Multi-strategy DeFi vaults on Aptos. Maximize yield automatically.',
+  icons: {
+    icon: '/favicon.webp',
+    shortcut: '/favicon.webp',
+    apple: '/favicon.webp',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
