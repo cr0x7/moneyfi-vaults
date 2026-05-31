@@ -180,14 +180,18 @@ body {
   .vault-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
 }
 
-/* Positions grid */
+/* Positions grid — equal-height cards via grid rows */
 .positions-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
+  align-items: stretch;
 }
 @media (min-width: 640px) {
-  .positions-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .positions-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 900px) {
+  .positions-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* Vault detail: 1-col mobile → sidebar layout desktop */

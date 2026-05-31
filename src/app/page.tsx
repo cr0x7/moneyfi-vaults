@@ -283,32 +283,65 @@ export default function VaultsPage() {
               const vault = VAULTS.find((v) => v.id === pos.vaultId)!
               const catMeta = CATEGORIES.find(c => c.id === vault.category)
               return (
-                <Link key={pos.vaultId} href={`/vault/${pos.vaultId}`} style={{ textDecoration: 'none' }}>
-                  <div className="card card-hover" style={{ padding: 14, borderColor: '#1a3a2a', background: '#0a1a0f' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Link key={pos.vaultId} href={`/vault/${pos.vaultId}`} style={{ textDecoration: 'none', display: 'flex' }}>
+                  <div
+                    className="card card-hover"
+                    style={{
+                      padding: 14,
+                      borderColor: catMeta?.color ? catMeta.color + '30' : '#1a3a2a',
+                      background: catMeta?.bg ?? '#0a1a0f',
+                      display: 'flex', flexDirection: 'column', width: '100%',
+                    }}
+                  >
+                    {/* Category tag */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      fontSize: 10, color: catMeta?.color ?? '#888',
+                      fontWeight: 600, marginBottom: 6,
+                    }}>
+                      {catMeta?.icon} {catMeta?.label}
+                    </div>
+
+                    {/* Name row */}
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>
+                      {vault.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>
+                      {vault.apy}% APY
+                    </div>
+
+                    {/* Value + PnL */}
+                    <div style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end',
+                      paddingBottom: 10, marginBottom: 10,
+                      borderBottom: '1px solid #1a1a1a',
+                    }}>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                          <span style={{ fontSize: 10, color: catMeta?.color ?? '#888' }}>
-                            {catMeta?.icon} {catMeta?.label}
-                          </span>
+                        <div style={{ fontSize: 9, color: '#444', letterSpacing: 0.8, marginBottom: 2 }}>CURRENT VALUE</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', lineHeight: 1 }}>
+                          {formatCurrency(pos.currentValue)}
                         </div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{vault.name}</div>
-                        <div style={{ fontSize: 11, color: '#555' }}>{vault.apy}% APY</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{formatCurrency(pos.currentValue)}</div>
-                        <div style={{ fontSize: 11, color: '#00e676' }}>+{formatCurrency(pos.unrealizedPnL)} ({pos.unrealizedPnLPercent.toFixed(1)}%)</div>
+                        <div style={{ fontSize: 9, color: '#444', letterSpacing: 0.8, marginBottom: 2 }}>UNREALIZED PnL</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: pos.unrealizedPnL >= 0 ? '#00e676' : '#ef4444' }}>
+                          +{formatCurrency(pos.unrealizedPnL)}
+                        </div>
+                        <div style={{ fontSize: 11, color: pos.unrealizedPnL >= 0 ? '#00e676' : '#ef4444' }}>
+                          ({pos.unrealizedPnLPercent.toFixed(2)}%)
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+
+                    {/* Stats row — always at bottom */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 'auto' }}>
                       {[
                         { label: 'DEPOSITED', value: formatCurrency(pos.deposited), color: '#888' },
-                        { label: 'EARNED', value: `+${formatCurrency(pos.earnedYield)}`, color: '#00e676' },
-                        { label: 'UNREAL. PnL', value: `${pos.unrealizedPnLPercent >= 0 ? '+' : ''}${pos.unrealizedPnLPercent.toFixed(2)}%`, color: pos.unrealizedPnL >= 0 ? '#00e676' : '#ef4444' },
+                        { label: 'EARNED YIELD', value: `+${formatCurrency(pos.earnedYield)}`, color: '#00e676' },
                       ].map((s) => (
                         <div key={s.label}>
-                          <div style={{ fontSize: 9, color: '#444', marginBottom: 1 }}>{s.label}</div>
-                          <div style={{ fontSize: 11, fontWeight: 600, color: s.color }}>{s.value}</div>
+                          <div style={{ fontSize: 9, color: '#444', marginBottom: 2, letterSpacing: 0.6 }}>{s.label}</div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: s.color }}>{s.value}</div>
                         </div>
                       ))}
                     </div>

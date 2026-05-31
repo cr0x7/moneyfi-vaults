@@ -120,10 +120,12 @@ export default function VaultDetailPage() {
             <TVLChart data={vault.tvlHistory} />
           </div>
 
-          {/* Protocol Allocation */}
-          <div className="card" style={{ padding: 20, marginBottom: 16 }}>
-            <ProtocolAllocation protocols={vault.protocols} />
-          </div>
+          {/* Protocol Allocation — only for LP vaults */}
+          {vault.category === 'LP' && (
+            <div className="card" style={{ padding: 20, marginBottom: 16 }}>
+              <ProtocolAllocation protocols={vault.protocols} />
+            </div>
+          )}
 
           {/* Recent Transactions */}
           {vault.transactions.length > 0 && (

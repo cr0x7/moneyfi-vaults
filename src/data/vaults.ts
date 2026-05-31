@@ -304,6 +304,17 @@ export const USER_POSITIONS: UserPosition[] = [
     unrealizedPnLPercent: 6.3,
     share: 0.0064,
   },
+  {
+    vaultId: 'delta-neutral',
+    deposited: 1000,
+    token: 'USDT',
+    depositedAt: '2025-10-12T08:30:00Z',
+    currentValue: 1087.2,
+    earnedYield: 87.2,
+    unrealizedPnL: 87.2,
+    unrealizedPnLPercent: 8.72,
+    share: 0.0169,
+  },
 ]
 
 export function getVaultById(id: string): Vault | undefined {
