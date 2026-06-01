@@ -46,12 +46,23 @@ export interface Transaction {
   value: number
 }
 
+export type SentiTier = 'CONSERVATIVE' | 'BALANCED' | 'AGGRESSIVE'
+export type Network   = 'APTOS' | 'BNB_CHAIN'
+
 export interface Vault {
   id: string
   name: string
   description: string
   category: VaultCategory
   strategy: StrategyType
+  // Senti-specific
+  sentiTier?: SentiTier
+  network: Network
+  targetApr?: number
+  riskScore?: number          // out of 10
+  performanceFee?: number     // %
+  managementFee?: number      // %
+  activeStrategies?: string[] // strategy names running in this vault
   riskLevel: RiskLevel
   apy: number
   baseApy: number

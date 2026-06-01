@@ -11,18 +11,18 @@ import { VaultCategory } from '@/lib/types'
 
 const CATEGORY_META: Record<VaultCategory, { label: string; icon: string; color: string; bg: string; tagline: string }> = {
   LP: {
-    label: 'Liquidity Provider',
+    label: 'Stable LP Vault',
     icon: '💧',
     color: '#00e676',
     bg: '#0a1a0f',
     tagline: 'Provide liquidity to Aptos DEX protocols — earn trading fees automatically with minimal directional risk.',
   },
   TRADING: {
-    label: 'Trading Strategies',
-    icon: '📈',
+    label: 'Senti Trading',
+    icon: '🤖',
     color: '#f97316',
     bg: '#1a0e00',
-    tagline: 'Automated algo strategies (EMA, Fibonacci, Grid, ORB, Markov) that actively trade the market for higher returns.',
+    tagline: 'Algo-managed trading vaults powered by Senti × Exness on BNB Chain. Three risk tiers: Conservative (~50%), Balanced (~100%), Aggressive (~200%) target APR.',
   },
   DELTA_NEUTRAL: {
     label: 'Delta Neutral',

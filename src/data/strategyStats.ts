@@ -8,6 +8,13 @@ export interface TradingStats {
   totalPnL: number
   roi: number
   irrAnnualized: number
+  maxDrawdown: number        // % MDD
+  currentDrawdown: number    // % current DD
+  recoveryTime: number       // days
+  riskScore: number          // /10
+  sharpeRatio: number
+  sortinoRatio: number
+  calmarRatio: number
   closedDeals: number
   winRate: number
   profitFactor: number
@@ -24,30 +31,43 @@ export interface TradingStats {
   manualCount: number
   winCount: number
   lossCount: number
+  // Returns
+  allTimeReturn: number      // %
+  return30d: number
+  return90d: number
+  returnYtd: number
+  // Fee
+  grossProfitBeforeFee: number
+  performanceFeePaid: number
+  netProfit: number
+  highWaterMark: number
+  // History
   equityHistory: { date: string; equity: number; balance: number; drawdown: number }[]
   pnlHistory:    { date: string; pnl: number; cumPnl: number }[]
   volumeHistory: { date: string; lots: number; cumLots: number }[]
+  // Strategies
+  activeStrategies: { name: string; version: string; allocation: number; return: number; mdd: number }[]
 }
 
 export interface FundingPayment {
   date: string
-  rate: number   // % per 8h
-  amount: number // $ collected
+  rate: number
+  amount: number
   side: 'received' | 'paid'
 }
 
 export interface DeltaNeutralStats {
-  currentFundingRate: number       // % per 8h
+  currentFundingRate: number
   prevFundingRate: number
-  annualizedYield: number          // % from funding alone
-  dailyYield: number               // $ per day per $1000
-  longSize: number                 // $ notional
-  shortSize: number                // $ notional
-  netDelta: number                 // $ (near 0)
-  collateralUsed: number           // $
-  totalFundingCollected: number    // $ since inception
-  positionHealth: number           // 0-100
-  nextFundingMs: number            // ms until next funding
+  annualizedYield: number
+  dailyYield: number
+  longSize: number
+  shortSize: number
+  netDelta: number
+  collateralUsed: number
+  totalFundingCollected: number
+  positionHealth: number
+  nextFundingMs: number
   fundingRateHistory: { date: string; rate: number; cumYield: number }[]
   recentPayments: FundingPayment[]
 }
@@ -61,32 +81,41 @@ function daysAgo(n: number): string {
 }
 
 function makeTradingStats(
-  base: number,       // account size
-  apy: number,
+  base: number,
+  targetApr: number,
   winRate: number,
+  riskScore: number,
+  maxDD: number,
+  strategies: { name: string; version: string; allocation: number }[],
   days = 120,
 ): TradingStats {
-  const deals         = Math.floor(days * 0.5)
-  const winCount      = Math.round(deals * winRate / 100)
-  const lossCount     = deals - winCount
-  const grossProfit   = base * (apy / 100) * (days / 365) * 1.8
-  const grossLoss     = grossProfit / (1 + (winRate - 40) / 100 * 2)
-  const totalPnL      = grossProfit - grossLoss
-  const avgWin        = grossProfit / winCount
-  const avgLoss       = -(grossLoss / lossCount)
-  const profitFactor  = grossProfit / grossLoss
+  const actualApy      = targetApr * (0.85 + Math.random() * 0.3)
+  const deals          = Math.floor(days * 0.5)
+  const winCount       = Math.round(deals * winRate / 100)
+  const lossCount      = deals - winCount
+  const grossBeforeFee = base * (actualApy / 100) * (days / 365)
+  const perfFee        = grossBeforeFee * 0.20
+  const netProfit      = grossBeforeFee - perfFee
+  const grossProfit    = grossBeforeFee * 1.8
+  const grossLoss      = grossProfit - grossBeforeFee
+  const avgWin         = grossProfit / winCount
+  const avgLoss        = -(grossLoss / lossCount)
+  const profitFactor   = grossProfit / grossLoss
 
-  // equity history
+  // Sharpe: (Return - RiskFree) / StdDev ≈ simplified
+  const sharpe  = Math.round(((actualApy - 5) / (maxDD * 0.8)) * 100) / 100
+  const sortino = Math.round(sharpe * 1.3 * 100) / 100
+  const calmar  = Math.round((actualApy / maxDD) * 100) / 100
+
   const equityHistory: TradingStats['equityHistory'] = []
-  let   equity = base
+  let equity = base
   for (let i = days; i >= 0; i--) {
-    const daily = (apy / 100 / 365) * equity * (0.5 + Math.random())
+    const daily = (actualApy / 100 / 365) * equity * (0.5 + Math.random())
     equity += daily
-    const dd = Math.max(0, (Math.random() < 0.15 ? Math.random() * 4 : Math.random() * 0.5))
-    equityHistory.push({ date: daysAgo(i), equity: Math.round(equity * 100) / 100, balance: Math.round((equity - daily * 0.1) * 100) / 100, drawdown: dd })
+    const dd = Math.random() < 0.1 ? Math.random() * maxDD * 0.6 : Math.random() * maxDD * 0.1
+    equityHistory.push({ date: daysAgo(i), equity: Math.round(equity * 100) / 100, balance: Math.round((equity - daily * 0.1) * 100) / 100, drawdown: Math.round(dd * 100) / 100 })
   }
 
-  // daily pnl
   const pnlHistory: TradingStats['pnlHistory'] = []
   let cumPnl = 0
   for (let i = days; i >= 0; i--) {
@@ -96,7 +125,6 @@ function makeTradingStats(
     pnlHistory.push({ date: daysAgo(i), pnl: Math.round(pnl * 100) / 100, cumPnl: Math.round(cumPnl * 100) / 100 })
   }
 
-  // volume
   const volumeHistory: TradingStats['volumeHistory'] = []
   let cumLots = 0
   for (let i = days; i >= 0; i--) {
@@ -106,70 +134,77 @@ function makeTradingStats(
   }
 
   return {
-    totalBalance:   Math.round((base + totalPnL) * 100) / 100,
-    totalEquity:    Math.round((base + totalPnL + Math.random() * 20) * 100) / 100,
-    totalPnL:       Math.round(totalPnL * 100) / 100,
-    roi:            Math.round((totalPnL / base) * 1000) / 10,
-    irrAnnualized:  Math.round(apy * 10 + Math.random() * 50),
-    closedDeals:    deals,
-    winRate:        Math.round(winRate * 10) / 10,
-    profitFactor:   Math.round(profitFactor * 100) / 100,
-    grossProfit:    Math.round(grossProfit * 100) / 100,
-    grossLoss:      Math.round(grossLoss * 100) / 100,
-    totalVolumeLots: Math.round(cumLots * 1000) / 1000,
-    notionalVolume:  Math.round(cumLots * 3200 * 100) / 100,
-    avgWin:         Math.round(avgWin * 100) / 100,
-    avgLoss:        Math.round(avgLoss * 100) / 100,
-    expectancy:     Math.round(((winRate / 100) * avgWin + (1 - winRate / 100) * avgLoss) * 100) / 100,
-    longCount:      Math.round(deals * 0.64),
-    shortCount:     Math.round(deals * 0.36),
-    robotCount:     deals,
-    manualCount:    0,
+    totalBalance:        Math.round((base + netProfit) * 100) / 100,
+    totalEquity:         Math.round((base + netProfit + Math.random() * 50) * 100) / 100,
+    totalPnL:            Math.round(netProfit * 100) / 100,
+    roi:                 Math.round((netProfit / base) * 1000) / 10,
+    irrAnnualized:       Math.round(actualApy * 0.8 * 10) / 10,
+    maxDrawdown:         maxDD,
+    currentDrawdown:     Math.round(Math.random() * maxDD * 0.3 * 100) / 100,
+    recoveryTime:        Math.round(10 + Math.random() * 20),
+    riskScore,
+    sharpeRatio:         sharpe,
+    sortinoRatio:        sortino,
+    calmarRatio:         calmar,
+    closedDeals:         deals,
+    winRate:             Math.round(winRate * 10) / 10,
+    profitFactor:        Math.round(profitFactor * 100) / 100,
+    grossProfit:         Math.round(grossProfit * 100) / 100,
+    grossLoss:           Math.round(grossLoss * 100) / 100,
+    totalVolumeLots:     Math.round(cumLots * 1000) / 1000,
+    notionalVolume:      Math.round(cumLots * 3200 * 100) / 100,
+    avgWin:              Math.round(avgWin * 100) / 100,
+    avgLoss:             Math.round(avgLoss * 100) / 100,
+    expectancy:          Math.round(((winRate / 100) * avgWin + (1 - winRate / 100) * avgLoss) * 100) / 100,
+    longCount:           Math.round(deals * 0.64),
+    shortCount:          Math.round(deals * 0.36),
+    robotCount:          deals,
+    manualCount:         0,
     winCount,
     lossCount,
+    allTimeReturn:       Math.round(actualApy * (days / 365) * 10) / 10,
+    return30d:           Math.round(actualApy / 12 * (0.8 + Math.random() * 0.4) * 10) / 10,
+    return90d:           Math.round(actualApy / 4 * (0.8 + Math.random() * 0.4) * 10) / 10,
+    returnYtd:           Math.round(actualApy * 0.5 * (0.8 + Math.random() * 0.4) * 10) / 10,
+    grossProfitBeforeFee: Math.round(grossBeforeFee * 100) / 100,
+    performanceFeePaid:   Math.round(perfFee * 100) / 100,
+    netProfit:            Math.round(netProfit * 100) / 100,
+    highWaterMark:        Math.round((base + netProfit * 1.05) * 100) / 100,
     equityHistory,
     pnlHistory,
     volumeHistory,
+    activeStrategies: strategies.map(s => ({
+      ...s,
+      return: Math.round(actualApy * (s.allocation / 100) * (0.7 + Math.random() * 0.6) * 10) / 10,
+      mdd:    Math.round(maxDD * (0.5 + Math.random() * 0.5) * 100) / 100,
+    })),
   }
 }
 
 function makeDeltaStats(tvl: number, fundingRate: number): DeltaNeutralStats {
-  const perAnnum      = fundingRate * 3 * 365
-  const dailyYield    = (fundingRate / 100) * 3 * 1000  // per $1000
-  const posSize       = tvl * 0.48
-  const collected     = tvl * 0.08
+  const perAnnum  = fundingRate * 3 * 365
+  const dailyYield = (fundingRate / 100) * 3 * 1000
+  const posSize   = tvl * 0.48
+  const collected = tvl * 0.08
 
-  // 90-day funding rate history (3 payments per day = every 8h)
   const fundingRateHistory: DeltaNeutralStats['fundingRateHistory'] = []
   let cumYield = 0
   for (let i = 90; i >= 0; i--) {
     const noise = (Math.random() - 0.5) * 0.008
     const rate  = Math.max(0.001, fundingRate + noise)
     cumYield   += rate * 3
-    fundingRateHistory.push({
-      date:     daysAgo(i),
-      rate:     Math.round(rate * 10000) / 10000,
-      cumYield: Math.round(cumYield * 100) / 100,
-    })
+    fundingRateHistory.push({ date: daysAgo(i), rate: Math.round(rate * 10000) / 10000, cumYield: Math.round(cumYield * 100) / 100 })
   }
 
-  // Recent 10 funding payments
   const recentPayments: FundingPayment[] = Array.from({ length: 10 }, (_, i) => {
     const noise  = (Math.random() - 0.5) * 0.006
     const rate   = Math.max(0.001, fundingRate + noise)
     const amount = (rate / 100) * posSize
-    const hoursAgo = i * 8
     const d = new Date()
-    d.setHours(d.getHours() - hoursAgo)
-    return {
-      date:   d.toISOString(),
-      rate:   Math.round(rate * 10000) / 10000,
-      amount: Math.round(amount * 100) / 100,
-      side:   'received' as const,
-    }
+    d.setHours(d.getHours() - i * 8)
+    return { date: d.toISOString(), rate: Math.round(rate * 10000) / 10000, amount: Math.round(amount * 100) / 100, side: 'received' as const }
   })
 
-  // Next funding: HyperLiquid pays at 00:00, 08:00, 16:00 UTC
   const now      = new Date()
   const utcH     = now.getUTCHours()
   const nextSlot = [0, 8, 16].find(h => h > utcH) ?? 24
@@ -195,13 +230,30 @@ function makeDeltaStats(tvl: number, fundingRate: number): DeltaNeutralStats {
 // ─── Per-vault stats ──────────────────────────────────────────────────────────
 
 export const TRADING_STATS: Record<string, TradingStats> = {
-  'ema-mirror-alpha':    makeTradingStats(30000, 18.4,  64.2),
-  'fibonacci-cascade':   makeTradingStats(30000, 24.7,  61.5),
-  'ema-crossover-yield': makeTradingStats(30000, 31.2,  67.2),
-  'open-range-breakout': makeTradingStats(30000, 22.9,  59.8),
-  'grid-dca-stable':     makeTradingStats(30000, 15.6,  71.0),
-  'markov-chain-alpha':  makeTradingStats(30000, 38.4,  56.3),
-  'mfr-dca-trend':       makeTradingStats(30000, 19.8,  63.1),
+  'senti-conservative': makeTradingStats(
+    30000, 50, 71.0, 3, 12.4,
+    [
+      { name: 'Grid DCA',   version: 'v1.02', allocation: 45 },
+      { name: 'EMA Mirror', version: 'v1.01', allocation: 35 },
+      { name: 'MFR DCA',    version: 'v2.02', allocation: 20 },
+    ]
+  ),
+  'senti-balanced': makeTradingStats(
+    30000, 100, 67.2, 5, 24.8,
+    [
+      { name: 'EMA Crossover', version: 'v1.09', allocation: 40 },
+      { name: 'Fibonacci DCA', version: 'v1.03', allocation: 35 },
+      { name: 'EMA Mirror',    version: 'v1.03', allocation: 25 },
+    ]
+  ),
+  'senti-aggressive': makeTradingStats(
+    30000, 200, 56.3, 8, 42.0,
+    [
+      { name: 'Markov Chain', version: 'v1.01', allocation: 45 },
+      { name: 'ORB',          version: 'v2.02', allocation: 35 },
+      { name: 'EMA Mirror',   version: 'v1.03 (Aggressive)', allocation: 20 },
+    ]
+  ),
 }
 
 export const DELTA_STATS: Record<string, DeltaNeutralStats> = {

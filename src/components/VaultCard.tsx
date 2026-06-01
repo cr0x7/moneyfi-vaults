@@ -23,14 +23,23 @@ const STRATEGY_LABEL: Record<string, string> = {
 }
 
 const CATEGORY_META: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  LP:            { label: 'Liquidity Provider', icon: '💧', color: '#00e676', bg: '#0a1a0f' },
-  TRADING:       { label: 'Trading Strategy',   icon: '📈', color: '#f97316', bg: '#1a0e00' },
-  DELTA_NEUTRAL: { label: 'Delta Neutral',       icon: '⚖️', color: '#a78bfa', bg: '#0d0a1a' },
+  LP:            { label: 'Stable LP Vault',  icon: '💧', color: '#00e676', bg: '#0a1a0f' },
+  TRADING:       { label: 'Senti Trading',    icon: '🤖', color: '#f97316', bg: '#1a0e00' },
+  DELTA_NEUTRAL: { label: 'Delta Neutral',    icon: '⚖️', color: '#a78bfa', bg: '#0d0a1a' },
+}
+
+const SENTI_TIER_META: Record<string, { label: string; color: string }> = {
+  CONSERVATIVE: { label: 'Conservative', color: '#00e676' },
+  BALANCED:     { label: 'Balanced',     color: '#f59e0b' },
+  AGGRESSIVE:   { label: 'Aggressive',   color: '#ef4444' },
 }
 
 export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
   const tvlChangePositive = vault.tvlChange >= 0
-  const catMeta = CATEGORY_META[vault.category] ?? CATEGORY_META['TRADING']
+  const catMeta    = CATEGORY_META[vault.category] ?? CATEGORY_META['TRADING']
+  const tierMeta   = vault.sentiTier ? SENTI_TIER_META[vault.sentiTier] : null
+  const isSenti    = vault.category === 'TRADING'
+  const displayAPY = vault.targetApr ?? vault.apy
 
   return (
     <Link href={`/vault/${vault.id}`} style={{ textDecoration: 'none', display: 'block' }}>
@@ -100,23 +109,51 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
           </span>
         </div>
 
-        {/* APY */}
+        {/* APY / Target APR */}
         <div style={{
           background: '#0a0a0a', border: `1px solid ${catMeta.color}25`,
           borderRadius: 8, padding: '10px 12px', marginBottom: 12,
         }}>
-          <div style={{ fontSize: 9, color: catMeta.color, fontWeight: 700, letterSpacing: 1, marginBottom: 2 }}>
-            APY
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
+            <span style={{ fontSize: 9, color: catMeta.color, fontWeight: 700, letterSpacing: 1 }}>
+              {isSenti ? 'TARGET APR' : 'APY'}
+            </span>
+            {tierMeta && (
+              <span style={{ fontSize: 9, fontWeight: 700, color: tierMeta.color, background: tierMeta.color + '20', padding: '1px 8px', borderRadius: 10 }}>
+                {tierMeta.label}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span style={{ fontSize: 26, fontWeight: 900, color: catMeta.color, lineHeight: 1 }}>
-              {formatAPY(vault.apy)}
+              ~{formatAPY(displayAPY)}
             </span>
-            <div style={{ fontSize: 10, color: '#444', lineHeight: 1.4 }}>
-              <div>{formatAPY(vault.baseApy)} base</div>
-              <div style={{ color: catMeta.color + '80' }}>+{formatAPY(vault.boostApy)} boost</div>
-            </div>
+            {isSenti ? (
+              <div style={{ fontSize: 10, color: '#444', lineHeight: 1.4 }}>
+                <div>indicative</div>
+                <div style={{ color: '#555' }}>not guaranteed</div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 10, color: '#444', lineHeight: 1.4 }}>
+                <div>{formatAPY(vault.baseApy)} base</div>
+                <div style={{ color: catMeta.color + '80' }}>+{formatAPY(vault.boostApy)} boost</div>
+              </div>
+            )}
           </div>
+          {/* Risk score for Senti */}
+          {vault.riskScore !== undefined && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                <span style={{ fontSize: 9, color: '#555' }}>RISK SCORE</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: catMeta.color }}>{vault.riskScore}/10</span>
+              </div>
+              <div style={{ display: 'flex', gap: 2 }}>
+                {Array.from({ length: 10 }, (_, i) => (
+                  <div key={i} style={{ flex: 1, height: 3, borderRadius: 1, background: i < (vault.riskScore ?? 0) ? catMeta.color : '#1a1a1a' }} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* TVL + min deposit */}
@@ -161,14 +198,23 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
               ✓ Audited
             </span>
           )}
-          {vault.autoCompound && (
-            <span style={{ fontSize: 9, color: '#666', background: '#1a1a1a', padding: '2px 7px', borderRadius: 4 }}>
-              Auto-compound
+          {vault.network === 'BNB_CHAIN' && (
+            <span style={{ fontSize: 9, color: '#f0b90b', background: '#f0b90b15', padding: '2px 7px', borderRadius: 4, fontWeight: 700 }}>
+              BNB Chain
             </span>
           )}
-          {vault.noHiddenFees && (
+          {vault.network === 'APTOS' && (
+            <span style={{ fontSize: 9, color: '#00e676', background: '#00e67615', padding: '2px 7px', borderRadius: 4 }}>
+              Aptos
+            </span>
+          )}
+          {(vault.performanceFee ?? 0) > 0 ? (
+            <span style={{ fontSize: 9, color: '#f59e0b', background: '#f59e0b15', padding: '2px 7px', borderRadius: 4 }}>
+              {vault.performanceFee}% perf. fee
+            </span>
+          ) : (
             <span style={{ fontSize: 9, color: '#666', background: '#1a1a1a', padding: '2px 7px', borderRadius: 4 }}>
-              No hidden fees
+              No fees
             </span>
           )}
         </div>

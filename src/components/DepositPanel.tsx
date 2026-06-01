@@ -9,307 +9,323 @@ interface DepositPanelProps {
   position?: UserPosition
 }
 
-const QUICK_AMOUNTS = [25, 50, 75, 100]
+// Senti vault activation steps (from PRD)
+const ACTIVATION_STEPS = [
+  { key: 'deposit',   label: 'Deposit Confirmed' },
+  { key: 'exness',    label: 'Exness Account Created' },
+  { key: 'senti',     label: 'Senti Engine Linked' },
+  { key: 'strategy',  label: 'Strategy Deployed' },
+  { key: 'active',    label: 'Vault Active' },
+]
+
+const WITHDRAWAL_STEPS = [
+  'Withdrawal Requested',
+  'Pause Strategy',
+  'Close Positions',
+  'Settle PnL & Fees',
+  'Transfer Back',
+  'Completed',
+]
 
 export default function DepositPanel({ vault, position }: DepositPanelProps) {
-  const [tab, setTab] = useState<'deposit' | 'withdraw'>('deposit')
-  const [amount, setAmount] = useState('')
-  const [token, setToken] = useState<TokenSymbol>(vault.supportedTokens[0])
-  const [submitted, setSubmitted] = useState(false)
+  const isSenti = vault.category === 'TRADING'
+  const [tab, setTab]         = useState<'deposit' | 'withdraw'>('deposit')
+  const [amount, setAmount]   = useState('')
+  const [token, setToken]     = useState<TokenSymbol>(vault.supportedTokens[0])
+  const [riskAck, setRiskAck] = useState(false)
+  const [step, setStep]       = useState<null | number>(null) // activation step index
 
   const numAmount = parseFloat(amount) || 0
-  const est1M = calcEstimatedEarnings(numAmount, vault.apy, 1)
-  const est6M = calcEstimatedEarnings(numAmount, vault.apy, 6)
-  const est1Y = calcEstimatedEarnings(numAmount, vault.apy, 12)
+  const apy       = vault.targetApr ?? vault.apy  // use target APR for Senti
+  const est1M     = calcEstimatedEarnings(numAmount, apy, 1)
+  const est6M     = calcEstimatedEarnings(numAmount, apy, 6)
+  const est1Y     = calcEstimatedEarnings(numAmount, apy, 12)
 
-  function handleAction() {
+  // Net after performance fee
+  const perfFee   = vault.performanceFee ?? 0
+  const netFactor = (100 - perfFee) / 100
+  const netEst1Y  = est1Y * netFactor
+
+  function handleDeposit() {
+    if (numAmount < vault.minDeposit) return
+    if (isSenti && !riskAck) return
+    // Simulate activation flow
+    setStep(0)
+    let s = 0
+    const timer = setInterval(() => {
+      s++
+      setStep(s)
+      if (s >= ACTIVATION_STEPS.length - 1) clearInterval(timer)
+    }, 900)
+  }
+
+  function handleWithdraw() {
     if (numAmount <= 0) return
-    setSubmitted(true)
-    setTimeout(() => setSubmitted(false), 3000)
+    setStep(-1) // signals withdrawal requested
   }
 
-  function setPercent(pct: number) {
-    if (tab === 'withdraw' && position) {
-      setAmount(((position.currentValue * pct) / 100).toFixed(2))
-    } else {
-      setAmount(((1000 * pct) / 100).toFixed(2))
-    }
-  }
+  const networkLabel = vault.network === 'BNB_CHAIN' ? 'BNB Chain (BSC)' : 'Aptos'
+  const networkColor = vault.network === 'BNB_CHAIN' ? '#f0b90b' : '#00e676'
 
   return (
     <div className="card" style={{ padding: 20 }}>
+
+      {/* Network badge */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: networkColor }} />
+        <span style={{ fontSize: 10, color: networkColor, fontWeight: 700, letterSpacing: 0.8 }}>
+          {networkLabel}
+        </span>
+        {isSenti && (
+          <>
+            <span style={{ color: '#333', fontSize: 10 }}>·</span>
+            <span style={{ fontSize: 10, color: '#555' }}>Powered by Senti × Exness</span>
+          </>
+        )}
+      </div>
+
       {/* Tabs */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          background: '#0d0d0d',
-          borderRadius: 8,
-          padding: 3,
-          marginBottom: 20,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#0d0d0d', borderRadius: 8, padding: 3, marginBottom: 18 }}>
         {(['deposit', 'withdraw'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '8px',
-              borderRadius: 6,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer',
-              border: 'none',
-              background: tab === t ? '#00e676' : 'transparent',
-              color: tab === t ? '#000' : '#555',
-              letterSpacing: 0.8,
-              transition: 'all 0.2s',
-            }}
-          >
+          <button key={t} onClick={() => { setTab(t); setStep(null) }}
+            style={{ padding: '8px', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
+              background: tab === t ? (isSenti ? '#f97316' : '#00e676') : 'transparent',
+              color: tab === t ? '#000' : '#555', letterSpacing: 0.8, transition: 'all 0.2s' }}>
             {t.toUpperCase()}
           </button>
         ))}
       </div>
 
-      {/* Amount input */}
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>AMOUNT</div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            background: '#0d0d0d',
-            border: '1px solid #222',
-            borderRadius: 8,
-            padding: '12px 14px',
-          }}
-        >
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            style={{
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              outline: 'none',
-              fontSize: 22,
-              fontWeight: 700,
-              color: '#fff',
-              width: '100%',
-            }}
-          />
-          {/* Token selector */}
-          <select
-            value={token}
-            onChange={(e) => setToken(e.target.value as TokenSymbol)}
-            style={{
-              background: '#1a1a1a',
-              border: '1px solid #333',
-              borderRadius: 6,
-              color: '#fff',
-              padding: '4px 8px',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            {vault.supportedTokens.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-        <div style={{ fontSize: 11, color: '#444', marginTop: 4 }}>
-          ≈ {formatCurrency(numAmount)} USD
-        </div>
-      </div>
+      {/* ── DEPOSIT FLOW ── */}
+      {tab === 'deposit' && step === null && (
+        <>
+          {/* Amount input */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>AMOUNT</div>
+            <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '12px 14px' }}>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                placeholder={`Min $${vault.minDeposit.toLocaleString()}`}
+                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <select value={token} onChange={(e) => setToken(e.target.value as TokenSymbol)}
+                style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 6, color: '#fff', padding: '4px 8px', fontSize: 13, fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
+                {vault.supportedTokens.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            {numAmount > 0 && numAmount < vault.minDeposit && (
+              <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>
+                Min deposit is ${vault.minDeposit.toLocaleString()}
+              </div>
+            )}
+            <div style={{ fontSize: 11, color: '#444', marginTop: 4 }}>≈ {formatCurrency(numAmount)} USD</div>
+          </div>
 
-      {/* Quick amounts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
-        {QUICK_AMOUNTS.map((pct) => (
-          <button
-            key={pct}
-            onClick={() => setPercent(pct)}
+          {/* Quick %  */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 16 }}>
+            {[25, 50, 75, 100].map((pct) => (
+              <button key={pct} onClick={() => setAmount((vault.minDeposit * (pct / 25)).toFixed(0))}
+                style={{ padding: '6px 0', background: '#1a1a1a', border: '1px solid #222', borderRadius: 6, color: '#888', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                {pct}%
+              </button>
+            ))}
+          </div>
+
+          {/* Estimated earnings */}
+          {numAmount >= vault.minDeposit && (
+            <div style={{ background: '#0a1a0f', border: '1px solid #00e67625', borderRadius: 8, padding: 12, marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 10, color: '#00e676', fontWeight: 700, letterSpacing: 0.8 }}>
+                  ESTIMATED RETURNS ({isSenti ? `~${vault.targetApr}% Target APR` : `${vault.apy.toFixed(2)}% APY`})
+                </span>
+              </div>
+              {[
+                { label: '1 MONTH',  gross: numAmount + est1M,  net: numAmount + est1M * netFactor },
+                { label: '6 MONTHS', gross: numAmount + est6M,  net: numAmount + est6M * netFactor },
+                { label: '1 YEAR',   gross: numAmount + est1Y,  net: numAmount + netEst1Y },
+              ].map((row) => (
+                <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                  <span style={{ fontSize: 11, color: '#555' }}>{row.label}</span>
+                  <div style={{ textAlign: 'right' }}>
+                    {perfFee > 0 ? (
+                      <>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{formatCurrency(row.net)}</span>
+                        <span style={{ fontSize: 10, color: '#555', marginLeft: 4 }}>net after {perfFee}% fee</span>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#00e676' }}>{formatCurrency(row.gross)}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Fee info */}
+          {(perfFee > 0 || (vault.managementFee ?? 0) === 0) && (
+            <div style={{ background: '#0d0d0d', borderRadius: 6, padding: '8px 12px', marginBottom: 14, fontSize: 11, color: '#555' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Management fee</span><span style={{ color: '#00e676' }}>0%</span>
+              </div>
+              {perfFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                  <span>Performance fee</span><span style={{ color: '#f59e0b' }}>{perfFee}% of net profits</span>
+                </div>
+              )}
+              {perfFee > 0 && (
+                <div style={{ marginTop: 4, fontSize: 10, color: '#444' }}>
+                  Fee charged only above High Water Mark
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Risk Acknowledgement — Senti only */}
+          {isSenti && (
+            <div style={{ background: '#1a0e00', border: '1px solid #f9731630', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: '#f97316', fontWeight: 700, letterSpacing: 0.8, marginBottom: 8 }}>
+                ⚠️ RISK ACKNOWLEDGEMENT
+              </div>
+              <p style={{ fontSize: 11, color: '#888', lineHeight: 1.5, marginBottom: 10 }}>
+                This vault uses algorithmic trading strategies on Exness via the Senti engine. Past performance does not guarantee future results.
+                Trading involves substantial risk of loss. Target APR is indicative only.
+              </p>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={riskAck} onChange={(e) => setRiskAck(e.target.checked)}
+                  style={{ marginTop: 2, accentColor: '#f97316' }} />
+                <span style={{ fontSize: 11, color: '#aaa' }}>
+                  I understand the risks and acknowledge that returns are not guaranteed
+                </span>
+              </label>
+            </div>
+          )}
+
+          {/* Gas fee */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#444', marginBottom: 16 }}>
+            <span>Gas Fee</span><span>$0.00</span>
+          </div>
+
+          {/* CTA */}
+          <button onClick={handleDeposit}
+            disabled={numAmount < vault.minDeposit || (isSenti && !riskAck)}
             style={{
-              padding: '6px 0',
-              background: '#1a1a1a',
-              border: '1px solid #222',
-              borderRadius: 6,
-              color: '#888',
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: 'pointer',
+              width: '100%', padding: '14px', fontSize: 14, letterSpacing: 1, fontWeight: 700,
+              background: isSenti ? '#f97316' : '#00e676',
+              color: '#000', border: 'none', borderRadius: 8, cursor: 'pointer',
+              opacity: (numAmount >= vault.minDeposit && (!isSenti || riskAck)) ? 1 : 0.4,
               transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.borderColor = '#00e676'; (e.target as HTMLButtonElement).style.color = '#00e676' }}
-            onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.borderColor = '#222'; (e.target as HTMLButtonElement).style.color = '#888' }}
-          >
-            {pct}%
+            }}>
+            DEPOSIT →
           </button>
-        ))}
-      </div>
 
-      {/* Auto-routed */}
-      {tab === 'deposit' && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 10, color: '#555', marginBottom: 6, letterSpacing: 0.8 }}>AUTO-ROUTED VIA</div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {vault.protocols.filter(p => p.percentage > 0).map((p) => (
-              <div
-                key={p.name}
-                title={`${p.name} — ${p.percentage.toFixed(1)}%`}
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: '50%',
-                  background: p.color + '33',
-                  border: `2px solid ${p.color}66`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  color: p.color,
-                }}
-              >
-                {p.name[0]}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 10 }}>
+            {vault.noHiddenFees && <span style={{ fontSize: 10, color: '#444' }}>No hidden fees</span>}
+            {vault.audited && <span style={{ fontSize: 10, color: '#444' }}>Audited</span>}
+          </div>
+        </>
+      )}
+
+      {/* ── ACTIVATION FLOW (after Senti deposit) ── */}
+      {tab === 'deposit' && step !== null && step >= 0 && (
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Activating your vault…</div>
+          <div style={{ fontSize: 11, color: '#555', marginBottom: 20 }}>
+            Estimated time: 15–30 minutes
+          </div>
+          {ACTIVATION_STEPS.map((s, i) => {
+            const done    = i < step
+            const current = i === step
+            return (
+              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: done ? '#f97316' : current ? '#1a0e00' : '#111',
+                  border: `2px solid ${done ? '#f97316' : current ? '#f97316' : '#333'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 700, color: done ? '#000' : current ? '#f97316' : '#444',
+                }}>
+                  {done ? '✓' : i + 1}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: done ? '#fff' : current ? '#fff' : '#444' }}>
+                    {s.label}
+                  </div>
+                  {current && (
+                    <div style={{ fontSize: 10, color: '#f97316', marginTop: 2 }}>In progress…</div>
+                  )}
+                </div>
+                {done && <span style={{ fontSize: 12, color: '#00e676' }}>✓</span>}
+              </div>
+            )
+          })}
+          {step >= ACTIVATION_STEPS.length - 1 && (
+            <div style={{ background: '#0a1a0f', border: '1px solid #00e67640', borderRadius: 8, padding: 14, marginTop: 10, textAlign: 'center' }}>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>🎉</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#00e676' }}>Vault Active!</div>
+              <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>Your strategies are now trading on Exness</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── WITHDRAW FLOW ── */}
+      {tab === 'withdraw' && step === null && (
+        <>
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>WITHDRAW AMOUNT</div>
+            <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '12px 14px' }}>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00"
+                style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <span style={{ fontSize: 13, color: '#888', fontWeight: 600 }}>{token}</span>
+            </div>
+          </div>
+
+          {isSenti && (
+            <div style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 8 }}>WITHDRAWAL TIMELINE</div>
+              {WITHDRAWAL_STEPS.map((s, i) => (
+                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: '#666' }}>{s}</span>
+                </div>
+              ))}
+              <div style={{ marginTop: 8, fontSize: 10, color: '#555' }}>
+                Estimated processing time: 1–3 business days
+              </div>
+            </div>
+          )}
+
+          <button onClick={handleWithdraw} disabled={numAmount <= 0}
+            style={{ width: '100%', padding: '14px', fontSize: 14, letterSpacing: 1, fontWeight: 700,
+              background: 'transparent', border: '1px solid #333', borderRadius: 8, color: '#888', cursor: 'pointer',
+              opacity: numAmount > 0 ? 1 : 0.4 }}>
+            WITHDRAW →
+          </button>
+        </>
+      )}
+
+      {tab === 'withdraw' && step === -1 && (
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ fontSize: 20, marginBottom: 8 }}>⏳</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Withdrawal Requested</div>
+          <div style={{ fontSize: 11, color: '#555' }}>Strategies pausing… positions closing… your funds will be transferred within 1–3 business days.</div>
+        </div>
+      )}
+
+      {/* ── User position ── */}
+      {position && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #1a1a1a' }}>
+          <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 10 }}>YOUR POSITION</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {[
+              { label: 'Deposited',       value: formatCurrency(position.deposited),    color: '#fff' },
+              { label: 'Current Value',   value: formatCurrency(position.currentValue), color: '#fff' },
+              { label: 'Earned Yield',    value: `+${formatCurrency(position.earnedYield)}`,  color: '#00e676' },
+              { label: 'Unrealized PnL',  value: `${position.unrealizedPnL >= 0 ? '+' : ''}${formatCurrency(position.unrealizedPnL)} (${position.unrealizedPnLPercent.toFixed(2)}%)`, color: position.unrealizedPnL >= 0 ? '#00e676' : '#ef4444' },
+            ].map((s) => (
+              <div key={s.label}>
+                <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: s.color }}>{s.value}</div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Estimated earnings */}
-      {tab === 'deposit' && numAmount > 0 && (
-        <div
-          style={{
-            background: '#0a1a0f',
-            border: '1px solid #00e67625',
-            borderRadius: 8,
-            padding: 12,
-            marginBottom: 14,
-          }}
-        >
-          <div style={{ fontSize: 10, color: '#00e676', fontWeight: 600, letterSpacing: 0.8, marginBottom: 8 }}>
-            ESTIMATED RETURNS
-          </div>
-          {[
-            { label: '1 MONTH', value: numAmount + est1M, earn: est1M, pct: (est1M / numAmount) * 100 },
-            { label: '6 MONTHS', value: numAmount + est6M, earn: est6M, pct: (est6M / numAmount) * 100 },
-            { label: '1 YEAR', value: numAmount + est1Y, earn: est1Y, pct: (est1Y / numAmount) * 100 },
-          ].map((row) => (
-            <div
-              key={row.label}
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '4px 0',
-              }}
-            >
-              <span style={{ fontSize: 11, color: '#555' }}>{row.label}</span>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
-                  {formatCurrency(row.value)}
-                </span>
-                <span style={{ fontSize: 11, color: '#00e676', marginLeft: 6 }}>
-                  +{formatCurrency(row.earn)} (+{row.pct.toFixed(1)}%)
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Fees info */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: 11,
-          color: '#444',
-          marginBottom: 16,
-        }}
-      >
-        <span>Gas Fee</span>
-        <span>$0.00</span>
-      </div>
-
-      {/* Action button */}
-      <button
-        onClick={handleAction}
-        disabled={numAmount <= 0}
-        className="btn-primary"
-        style={{
-          width: '100%',
-          padding: '14px',
-          fontSize: 14,
-          letterSpacing: 1,
-          opacity: numAmount <= 0 ? 0.4 : 1,
-        }}
-      >
-        {submitted
-          ? '✓ Transaction Submitted!'
-          : tab === 'deposit'
-          ? `DEPOSIT →`
-          : 'WITHDRAW →'}
-      </button>
-
-      {/* Badges */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 12 }}>
-        {vault.noHiddenFees && (
-          <span style={{ fontSize: 10, color: '#444' }}>No hidden fees</span>
-        )}
-        {vault.autoCompound && (
-          <span style={{ fontSize: 10, color: '#444' }}>Auto-compounding</span>
-        )}
-        {vault.audited && (
-          <span style={{ fontSize: 10, color: '#444' }}>Audited by MOVEBIT</span>
-        )}
-      </div>
-
-      {/* User position */}
-      {position && (
-        <div
-          style={{
-            marginTop: 16,
-            paddingTop: 16,
-            borderTop: '1px solid #1a1a1a',
-          }}
-        >
-          <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 10 }}>
-            YOUR POSITION
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>Deposited</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {formatCurrency(position.deposited)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>Current Value</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>
-                {formatCurrency(position.currentValue)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>Earned Yield</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#00e676' }}>
-                +{formatCurrency(position.earnedYield)}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>Unrealized PnL</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: position.unrealizedPnL >= 0 ? '#00e676' : '#ef4444' }}>
-                {position.unrealizedPnL >= 0 ? '+' : ''}{formatCurrency(position.unrealizedPnL)}
-                <span style={{ fontSize: 11, marginLeft: 4 }}>
-                  ({position.unrealizedPnLPercent.toFixed(2)}%)
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       )}

@@ -127,7 +127,7 @@ export default function VaultDetailPage() {
           {/* ── TRADING: full analytics panel + APY chart ──────── */}
           {vault.category === 'TRADING' && tradingStats && (
             <>
-              <TradingStatsPanel stats={tradingStats} />
+              <TradingStatsPanel stats={tradingStats} performanceFee={vault.performanceFee} />
               <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                 <APYChart data={vault.apyHistory} />
               </div>
