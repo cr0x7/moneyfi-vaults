@@ -10,6 +10,7 @@ import TVLChart from '@/components/TVLChart'
 import ProtocolAllocation from '@/components/ProtocolAllocation'
 import TradingStatsPanel from '@/components/TradingStats'
 import DeltaNeutralStatsPanel from '@/components/DeltaNeutralStats'
+import LpDeltaStatsPanel from '@/components/LpDeltaStats'
 import { formatCurrency, formatDate, riskBgColor } from '@/lib/utils'
 
 const CATEGORY_META: Record<string, { label: string; icon: string; color: string }> = {
@@ -134,12 +135,17 @@ export default function VaultDetailPage() {
             </>
           )}
 
-          {/* ── DELTA NEUTRAL: funding rate dashboard ──────────── */}
-          {vault.category === 'DELTA_NEUTRAL' && deltaStats && (
-            <DeltaNeutralStatsPanel stats={deltaStats} />
-          )}
+{/* ── DELTA NEUTRAL: funding rate dashboard ──────────── */}
+{vault.category === 'DELTA_NEUTRAL' && deltaStats && (
+  <DeltaNeutralStatsPanel stats={deltaStats} />
+)}
 
-          {/* Recent Transactions — LP only (has actual tx data) */}
+{/* ── LP & DELTA NEUTRAL: risk / performance / fee ──── */}
+{(vault.category === 'LP' || vault.category === 'DELTA_NEUTRAL') && tradingStats && (
+  <LpDeltaStatsPanel stats={tradingStats} performanceFee={vault.performanceFee} category={vault.category} />
+)}
+
+{/* Recent Transactions — LP only (has actual tx data) */}
           {vault.transactions.length > 0 && (
             <div className="card" style={{ padding: 20, marginBottom: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>

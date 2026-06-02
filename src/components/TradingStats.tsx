@@ -21,9 +21,7 @@ function StatCell({ label, value, color, sub }: { label: string; value: string; 
 }
 
 function CompositionBar({ label, leftVal, rightVal, leftLabel, rightLabel, leftColor, rightColor, pct }: {
-  label: string; leftVal: string; rightVal: string
-  leftLabel: string; rightLabel: string
-  leftColor: string; rightColor: string; pct: number
+  label: string; leftVal: string; rightVal: string; leftLabel: string; rightLabel: string; leftColor: string; rightColor: string; pct: number
 }) {
   return (
     <div style={{ marginBottom: 16 }}>
@@ -59,49 +57,48 @@ function RiskMeter({ score }: { score: number }) {
   )
 }
 
-const ttStyle = { background: '#111', border: '1px solid #333', borderRadius: 8, fontSize: 11, color: '#fff' }
-
-type Tab = 'COMPOSITION' | 'EQUITY' | 'PNL' | 'VOLUME' | 'PROFESSIONAL'
-const TABS: Tab[] = ['COMPOSITION', 'EQUITY', 'PNL', 'VOLUME', 'PROFESSIONAL']
+const ttStyle = { background: '#111', border: '1px solid #333', borderRadius: 8, fontSize: 11, color: '#fff' } as const
+type Tab = 'COMPOSITION' | 'EQUITY' | 'DRAWDOWN' | 'PNL' | 'VOLUME' | 'PROFESSIONAL'
+const TABS: Tab[] = ['COMPOSITION', 'EQUITY', 'DRAWDOWN', 'PNL', 'VOLUME', 'PROFESSIONAL']
 
 export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props) {
   const [tab, setTab] = useState<Tab>('COMPOSITION')
 
   const pnlPositive = stats.totalPnL >= 0
-  const profitPct   = (stats.grossProfit / (stats.grossProfit + stats.grossLoss)) * 100
-  const longPct     = (stats.longCount / (stats.longCount + stats.shortCount)) * 100
+  const profitPct = (stats.grossProfit / (stats.grossProfit + stats.grossLoss)) * 100
+  const longPct = (stats.longCount / (stats.longCount + stats.shortCount)) * 100
 
   return (
     <div className="card" style={{ marginBottom: 16, overflow: 'hidden' }}>
 
       {/* ── Hero metrics: 3×3 grid ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1px solid #1a1a1a' }}>
-        <StatCell label="TOTAL BALANCE"    value={formatCurrency(stats.totalBalance)} />
-        <StatCell label="TOTAL EQUITY"     value={formatCurrency(stats.totalEquity)} />
-        <StatCell label="TOTAL P&L (NET)"  value={formatCurrency(stats.totalPnL)}    color={pnlPositive ? '#00e676' : '#ef4444'} />
-        <StatCell label="ROI"              value={`${stats.roi}%`}                   color={pnlPositive ? '#00e676' : '#ef4444'} />
-        <StatCell label="IRR (ANNUALIZED)" value={`${stats.irrAnnualized}%`}         color="#00e676" />
-        <StatCell label="CLOSED DEALS"     value={String(stats.closedDeals)} />
-        <StatCell label="MAX DRAWDOWN"     value={`${stats.maxDrawdown}%`}           color="#ef4444" />
-        <StatCell label="CURRENT DRAWDOWN" value={`${stats.currentDrawdown}%`}       color={stats.currentDrawdown < stats.maxDrawdown * 0.5 ? '#f59e0b' : '#ef4444'} />
-        <StatCell label="WIN RATE"         value={`${stats.winRate}%`}               color="#00e676" />
-        <StatCell label="PROFIT FACTOR"    value={String(stats.profitFactor)}        color={stats.profitFactor >= 1.5 ? '#00e676' : '#f59e0b'} />
-        <StatCell label="GROSS PROFIT"     value={formatCurrency(stats.grossProfit)} color="#00e676" />
-        <StatCell label="GROSS LOSS"       value={`−${formatCurrency(stats.grossLoss)}`} color="#ef4444" />
-        <StatCell label="AVG WIN"          value={formatCurrency(stats.avgWin)}      color="#00e676" />
-        <StatCell label="AVG LOSS"         value={`−${formatCurrency(Math.abs(stats.avgLoss))}`} color="#ef4444" />
-        <StatCell label="EXPECTANCY"       value={formatCurrency(stats.expectancy)}  color={stats.expectancy >= 0 ? '#00e676' : '#ef4444'} />
-        <StatCell label="LONG / SHORT"     value={`${stats.longCount} / ${stats.shortCount}`} />
-        <StatCell label="ROBOT / MANUAL"   value={`${stats.robotCount} / ${stats.manualCount}`} />
-        <StatCell label="WIN / LOSS"       value={`${stats.winCount} / ${stats.lossCount}`} />
+        <StatCell label="TOTAL BALANCE" value={formatCurrency(stats.totalBalance)} />
+        <StatCell label="TOTAL EQUITY" value={formatCurrency(stats.totalEquity)} />
+        <StatCell label="TOTAL P&L (NET)" value={formatCurrency(stats.totalPnL)} color={pnlPositive ? '#00e676' : '#ef4444'} />
+        <StatCell label="ROI" value={`${stats.roi}%`} color={pnlPositive ? '#00e676' : '#ef4444'} />
+        <StatCell label="IRR (ANNUALIZED)" value={`${stats.irrAnnualized}%`} color="#00e676" />
+        <StatCell label="TOTAL TRADES" value={String(stats.closedDeals)} />
+        <StatCell label="MAX DRAWDOWN" value={`${stats.maxDrawdown}%`} color="#ef4444" />
+        <StatCell label="CURRENT DRAWDOWN" value={`${stats.currentDrawdown}%`} color={stats.currentDrawdown < stats.maxDrawdown * 0.5 ? '#f59e0b' : '#ef4444'} />
+        <StatCell label="WIN RATE" value={`${stats.winRate}%`} color="#00e676" />
+        <StatCell label="PROFIT FACTOR" value={String(stats.profitFactor)} color={stats.profitFactor >= 1.5 ? '#00e676' : '#f59e0b'} />
+        <StatCell label="GROSS PROFIT" value={formatCurrency(stats.grossProfit)} color="#00e676" />
+        <StatCell label="GROSS LOSS" value={`−${formatCurrency(stats.grossLoss)}`} color="#ef4444" />
+        <StatCell label="AVG WIN" value={formatCurrency(stats.avgWin)} color="#00e676" />
+        <StatCell label="AVG LOSS" value={`−${formatCurrency(Math.abs(stats.avgLoss))}`} color="#ef4444" />
+        <StatCell label="EXPECTANCY" value={formatCurrency(stats.expectancy)} color={stats.expectancy >= 0 ? '#00e676' : '#ef4444'} />
+        <StatCell label="LONG / SHORT" value={`${stats.longCount} / ${stats.shortCount}`} />
+        <StatCell label="ROBOT / MANUAL" value={`${stats.robotCount} / ${stats.manualCount}`} />
+        <StatCell label="WIN / LOSS" value={`${stats.winCount} / ${stats.lossCount}`} />
       </div>
 
       {/* ── Returns row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1px solid #1a1a1a' }}>
-        <StatCell label="ALL-TIME RETURN" value={`${stats.allTimeReturn}%`}  color="#00e676" />
-        <StatCell label="30D RETURN"      value={`${stats.return30d}%`}      color="#00e676" />
-        <StatCell label="90D RETURN"      value={`${stats.return90d}%`}      color="#00e676" />
-        <StatCell label="YTD RETURN"      value={`${stats.returnYtd}%`}      color="#00e676" />
+        <StatCell label="ALL-TIME RETURN" value={`${stats.allTimeReturn}%`} color="#00e676" />
+        <StatCell label="30D RETURN" value={`${stats.return30d}%`} color="#00e676" />
+        <StatCell label="90D RETURN" value={`${stats.return90d}%`} color="#00e676" />
+        <StatCell label="YTD RETURN" value={`${stats.returnYtd}%`} color="#00e676" />
       </div>
 
       {/* ── Risk meter ── */}
@@ -119,7 +116,7 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
             { label: 'GROSS PROFIT', value: formatCurrency(stats.grossProfitBeforeFee), color: '#00e676' },
             { label: 'PERF. FEE PAID', value: `−${formatCurrency(stats.performanceFeePaid)}`, color: '#f59e0b' },
             { label: 'NET PROFIT', value: formatCurrency(stats.netProfit), color: '#00e676' },
-            { label: 'HIGH WATER MARK', value: formatCurrency(stats.highWaterMark), color: '#888' },
+            { label: 'WITHDRAWABLE BALANCE', value: formatCurrency(stats.totalEquity - stats.performanceFeePaid), color: '#fff' },
           ].map((f) => (
             <div key={f.label}>
               <div style={{ fontSize: 9, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 4 }}>{f.label}</div>
@@ -141,9 +138,7 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
             color: tab === t ? '#fff' : '#555',
             borderBottom: tab === t ? '2px solid #f97316' : '2px solid transparent',
             transition: 'all 0.15s',
-          }}>
-            {t}
-          </button>
+          }}>{t}</button>
         ))}
       </div>
 
@@ -155,11 +150,10 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
             <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>Profit · Win rate · Direction · Source</div>
             <div style={{ height: 1, background: '#1a1a1a', marginBottom: 20 }} />
             <CompositionBar label="PROFIT / LOSS" leftVal={formatCurrency(stats.grossProfit)} leftLabel="Profit" rightVal={formatCurrency(stats.grossLoss)} rightLabel="Loss" leftColor="#00e676" rightColor="#ef4444" pct={profitPct} />
-            <CompositionBar label="WIN / LOSS"     leftVal={String(stats.winCount)}  leftLabel="Win"   rightVal={String(stats.lossCount)}  rightLabel="Loss"  leftColor="#00e676" rightColor="#ef4444" pct={stats.winRate} />
-            <CompositionBar label="LONG / SHORT"   leftVal={String(stats.longCount)} leftLabel="Long"  rightVal={String(stats.shortCount)} rightLabel="Short" leftColor="#3b82f6" rightColor="#f97316" pct={longPct} />
+            <CompositionBar label="WIN / LOSS" leftVal={String(stats.winCount)} leftLabel="Win" rightVal={String(stats.lossCount)} rightLabel="Loss" leftColor="#00e676" rightColor="#ef4444" pct={stats.winRate} />
+            <CompositionBar label="LONG / SHORT" leftVal={String(stats.longCount)} leftLabel="Long" rightVal={String(stats.shortCount)} rightLabel="Short" leftColor="#3b82f6" rightColor="#f97316" pct={longPct} />
             <CompositionBar label="ROBOT / MANUAL" leftVal={String(stats.robotCount)} leftLabel="Robot" rightVal={String(stats.manualCount)} rightLabel="Manual" leftColor="#a78bfa" rightColor="#555" pct={100} />
 
-            {/* Active strategies */}
             {stats.activeStrategies.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 12 }}>ACTIVE STRATEGIES</div>
@@ -195,7 +189,7 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
           </div>
         )}
 
-        {/* EQUITY & DRAWDOWN */}
+        {/* EQUITY */}
         {tab === 'EQUITY' && (
           <div>
             <div style={{ fontSize: 11, color: '#555', marginBottom: 12 }}>
@@ -213,13 +207,41 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
                 <XAxis dataKey="date" tickFormatter={(v) => { const d = new Date(v); return `${d.getMonth()+1}/${d.getDate()}` }} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                 <YAxis tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={ttStyle} formatter={(v) => [formatCurrency(Number(v)), '']} labelFormatter={(l) => new Date(l).toLocaleDateString()} />
-                <Area type="monotone" dataKey="equity"  stroke="#f97316" strokeWidth={2} fill="url(#eqGrad)" dot={false} name="Equity" />
+                <Area type="monotone" dataKey="equity" stroke="#f97316" strokeWidth={2} fill="url(#eqGrad)" dot={false} name="Equity" />
                 <Area type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={1} fill="none" dot={false} name="Balance" strokeDasharray="4 2" />
               </AreaChart>
             </ResponsiveContainer>
             <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 12, height: 2, background: '#f97316' }} /><span style={{ fontSize: 10, color: '#555' }}>Equity</span></div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 12, height: 2, background: '#3b82f6' }} /><span style={{ fontSize: 10, color: '#555' }}>Balance</span></div>
+            </div>
+          </div>
+        )}
+
+        {/* DRAWDOWN */}
+        {tab === 'DRAWDOWN' && (
+          <div>
+            <div style={{ fontSize: 11, color: '#555', marginBottom: 12 }}>
+              Daily drawdown from peak equity · negative values indicate loss from high watermark
+            </div>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={stats.equityHistory.filter((_, i) => i % 3 === 0)} margin={{ top: 4, right: 0, bottom: 0, left: -20 }}>
+                <defs>
+                  <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ef4444" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#1a1a1a" strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="date" tickFormatter={(v) => { const d = new Date(v); return `${d.getMonth()+1}/${d.getDate()}` }} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                <YAxis tickFormatter={(v) => `${v.toFixed(1)}%`} tick={{ fill: '#444', fontSize: 10 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={ttStyle} formatter={(v) => [`${Number(v).toFixed(2)}%`, 'Drawdown']} labelFormatter={(l) => new Date(l).toLocaleDateString()} />
+                <ReferenceLine y={0} stroke="#333" />
+                <Area type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={2} fill="url(#ddGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div style={{ display: 'flex', gap: 16, marginTop: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}><div style={{ width: 12, height: 2, background: '#ef4444' }} /><span style={{ fontSize: 10, color: '#555' }}>Drawdown</span></div>
             </div>
           </div>
         )}
@@ -290,33 +312,13 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
             <div style={{ fontSize: 11, color: '#555', marginBottom: 16 }}>Risk-adjusted performance ratios</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
               {[
-                {
-                  name: 'Sharpe Ratio',
-                  value: stats.sharpeRatio,
-                  desc: '(Return − Risk-free) ÷ StdDev',
-                  good: stats.sharpeRatio >= 1,
-                  threshold: '> 1 is good',
-                },
-                {
-                  name: 'Sortino Ratio',
-                  value: stats.sortinoRatio,
-                  desc: 'Like Sharpe but penalises downside only',
-                  good: stats.sortinoRatio >= 1.5,
-                  threshold: '> 1.5 is good',
-                },
-                {
-                  name: 'Calmar Ratio',
-                  value: stats.calmarRatio,
-                  desc: 'Annual return ÷ Max Drawdown',
-                  good: stats.calmarRatio >= 0.5,
-                  threshold: '> 0.5 is good',
-                },
+                { name: 'Sharpe Ratio', value: stats.sharpeRatio, desc: '(Return − Risk-free) ÷ StdDev', good: stats.sharpeRatio >= 1, threshold: '> 1 is good' },
+                { name: 'Sortino Ratio', value: stats.sortinoRatio, desc: 'Like Sharpe but penalises downside only', good: stats.sortinoRatio >= 1.5, threshold: '> 1.5 is good' },
+                { name: 'Calmar Ratio', value: stats.calmarRatio, desc: 'Annual return ÷ Max Drawdown', good: stats.calmarRatio >= 0.5, threshold: '> 0.5 is good' },
               ].map((r) => (
                 <div key={r.name} className="card" style={{ padding: 16 }}>
                   <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 6 }}>{r.name.toUpperCase()}</div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: r.good ? '#00e676' : '#f59e0b', lineHeight: 1, marginBottom: 6 }}>
-                    {r.value.toFixed(2)}
-                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: r.good ? '#00e676' : '#f59e0b', lineHeight: 1, marginBottom: 6 }}>{r.value.toFixed(2)}</div>
                   <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>{r.threshold}</div>
                   <div style={{ fontSize: 10, color: '#444', lineHeight: 1.4 }}>{r.desc}</div>
                 </div>
@@ -340,25 +342,28 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
 
               <div className="card" style={{ padding: 14 }}>
                 <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 10 }}>ACCOUNT STRUCTURE</div>
-                {[
-                  { label: 'User Wallet', icon: '👤' },
-                  { label: 'MoneyFi Vault', icon: '🏦' },
-                  { label: 'Exness Sub Account', icon: '🔗' },
-                  { label: 'Senti Trading Engine', icon: '🤖' },
-                  { label: 'Active Strategies', icon: '📈' },
-                ].map((a, i, arr) => (
-                  <div key={a.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
-                    <span style={{ fontSize: 12 }}>{a.icon}</span>
-                    <span style={{ fontSize: 11, color: '#888' }}>{a.label}</span>
-                    {i < arr.length - 1 && (
-                      <span style={{ marginLeft: 'auto', fontSize: 10, color: '#333' }}>↓</span>
-                    )}
-                  </div>
-                ))}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {[
+                    { label: 'User Wallet', icon: '👤', detail: '' },
+                    { label: 'MoneyFi Vault', icon: '🏦', detail: '' },
+                    { label: 'Exness Sub Account', icon: '🔗', detail: `ID: EX-${String(stats.robotCount).slice(0, 4).toUpperCase()}-${String(Math.floor(Math.random() * 9000 + 1000))}` },
+                    { label: 'Current Exposure', icon: '📊', detail: `${formatCurrency(stats.totalEquity * 0.48)} (${((stats.totalEquity * 0.48 / stats.totalEquity) * 100).toFixed(0)}% of equity)` },
+                    { label: 'Senti Trading Engine', icon: '🤖', detail: 'Active' },
+                    { label: 'Active Strategies', icon: '📈', detail: `${stats.activeStrategies.length} running` },
+                  ].map((a, i, arr) => (
+                    <div key={a.label} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0' }}>
+                      <span style={{ fontSize: 12 }}>{a.icon}</span>
+                      <span style={{ fontSize: 11, color: '#888' }}>{a.label}</span>
+                      {a.detail && <span style={{ marginLeft: 'auto', fontSize: 10, color: '#555' }}>{a.detail}</span>}
+                      {i < arr.length - 1 && !a.detail && <span style={{ marginLeft: 'auto', fontSize: 10, color: '#333' }}>↓</span>}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   )

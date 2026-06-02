@@ -231,27 +231,41 @@ function makeDeltaStats(tvl: number, fundingRate: number): DeltaNeutralStats {
 
 export const TRADING_STATS: Record<string, TradingStats> = {
   'senti-conservative': makeTradingStats(
-    30000, 50, 71.0, 3, 12.4,
-    [
-      { name: 'Grid DCA',   version: 'v1.02', allocation: 45 },
+    30000, 50, 71.0, 3, 12.4, [
+      { name: 'Grid DCA', version: 'v1.02', allocation: 45 },
       { name: 'EMA Mirror', version: 'v1.01', allocation: 35 },
-      { name: 'MFR DCA',    version: 'v2.02', allocation: 20 },
+      { name: 'MFR DCA', version: 'v2.02', allocation: 20 },
     ]
   ),
   'senti-balanced': makeTradingStats(
-    30000, 100, 67.2, 5, 24.8,
-    [
+    30000, 100, 67.2, 5, 24.8, [
       { name: 'EMA Crossover', version: 'v1.09', allocation: 40 },
       { name: 'Fibonacci DCA', version: 'v1.03', allocation: 35 },
-      { name: 'EMA Mirror',    version: 'v1.03', allocation: 25 },
+      { name: 'EMA Mirror', version: 'v1.03', allocation: 25 },
     ]
   ),
   'senti-aggressive': makeTradingStats(
-    30000, 200, 56.3, 8, 42.0,
-    [
+    30000, 200, 56.3, 8, 42.0, [
       { name: 'Markov Chain', version: 'v1.01', allocation: 45 },
-      { name: 'ORB',          version: 'v2.02', allocation: 35 },
-      { name: 'EMA Mirror',   version: 'v1.03 (Aggressive)', allocation: 20 },
+      { name: 'ORB', version: 'v2.02', allocation: 35 },
+      { name: 'EMA Mirror', version: 'v1.03 (Aggressive)', allocation: 20 },
+    ]
+  ),
+  // LP vault — stable yield, low drawdown, high consistency
+  'usdt-multi-strategy': makeTradingStats(
+    18640000, 29.74, 88.0, 2, 6.5, [
+      { name: 'Tapp Exchange', version: 'V2', allocation: 69.6 },
+      { name: 'Moar', version: 'v1', allocation: 25.8 },
+      { name: 'Hyperion', version: 'v1', allocation: 4.4 },
+      { name: 'Aries Markets', version: 'v1', allocation: 0.2 },
+    ]
+  ),
+  // Delta Neutral — market-neutral funding rate, medium risk
+  'delta-neutral': makeTradingStats(
+    6430000, 27.6, 76.0, 4, 14.0, [
+      { name: 'HyperLiquid Perp', version: 'v1', allocation: 70.0 },
+      { name: 'Hyperion', version: 'v1', allocation: 20.0 },
+      { name: 'Moar', version: 'v1', allocation: 10.0 },
     ]
   ),
 }
