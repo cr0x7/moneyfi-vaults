@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import VaultCard from '@/components/VaultCard'
 import { VAULTS, USER_POSITIONS } from '@/data/vaults'
+import { TRADING_STATS } from '@/data/strategyStats'
 import { formatCurrency } from '@/lib/utils'
 import { VaultCategory } from '@/lib/types'
 
@@ -39,6 +40,10 @@ const SORT_OPTIONS  = [
   { id: 'tvl',    label: 'Largest TVL' },
   { id: 'newest', label: 'Newest' },
 ] as const
+
+function getVaultMdd(vaultId: string, category: VaultCategory) {
+  return category === 'TRADING' ? (TRADING_STATS[vaultId]?.maxDrawdown ?? 0) : 0
+}
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -123,6 +128,7 @@ export default function VaultsPage() {
             {USER_POSITIONS.map((pos) => {
               const vault   = VAULTS.find((v) => v.id === pos.vaultId)!
               const catMeta = CATEGORY_META[vault.category]
+              const maxDrawdown = getVaultMdd(vault.id, vault.category)
               return (
                 <Link key={pos.vaultId} href={`/vault/${pos.vaultId}`} style={{ textDecoration: 'none', display: 'flex' }}>
                   <div
@@ -143,8 +149,10 @@ export default function VaultsPage() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2, lineHeight: 1.3 }}>
                       {vault.name}
                     </div>
-                    <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>
-                      {vault.apy}% APY
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 11, color: '#555', marginBottom: 10 }}>
+                      <span>{vault.apy}% APY</span>
+                      <span style={{ color: '#333' }}>·</span>
+                      <span style={{ color: maxDrawdown > 0 ? '#ef4444' : '#00e676' }}>MDD {maxDrawdown}%</span>
                     </div>
 
                     {/* Value + PnL */}
@@ -171,10 +179,11 @@ export default function VaultsPage() {
                     </div>
 
                     {/* Stats — pinned to bottom */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 'auto' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 'auto' }}>
                       {[
                         { label: 'DEPOSITED',    value: formatCurrency(pos.deposited),    color: '#888' },
                         { label: 'EARNED YIELD', value: `+${formatCurrency(pos.earnedYield)}`, color: '#00e676' },
+                        { label: 'MDD', value: `${maxDrawdown}%`, color: maxDrawdown > 0 ? '#ef4444' : '#00e676' },
                       ].map((s) => (
                         <div key={s.label}>
                           <div style={{ fontSize: 9, color: '#444', marginBottom: 2, letterSpacing: 0.6 }}>{s.label}</div>

@@ -39,6 +39,8 @@ function Countdown({ ms }: { ms: number }) {
 }
 
 export default function DeltaNeutralStatsPanel({ stats }: Props) {
+  const [selectedPair, setSelectedPair] = useState(stats.activePairs[0]?.symbol ?? '')
+  const pair = stats.activePairs.find((p) => p.symbol === selectedPair) ?? stats.activePairs[0]
   const rateChange = stats.currentFundingRate - stats.prevFundingRate
   const rateUp     = rateChange >= 0
 
@@ -87,34 +89,80 @@ export default function DeltaNeutralStatsPanel({ stats }: Props) {
         <Stat label="POSITION HEALTH" value={`${stats.positionHealth}%`} sub="liquidation buffer" color={stats.positionHealth > 80 ? '#00e676' : '#f97316'} />
       </div>
 
+      {/* ── Active pair allocation ─────────────────────────── */}
+      {stats.activePairs.length > 0 && (
+        <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 1 }}>ACTIVE PAIRS</div>
+            <div style={{ fontSize: 10, color: '#666' }}>{stats.activePairs.length} market-neutral pairs</div>
+          </div>
+          <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden', display: 'flex', marginBottom: 12 }}>
+            {stats.activePairs.map((p, i) => (
+              <div key={p.symbol} style={{ width: `${p.allocation}%`, background: ['#a78bfa', '#3b82f6', '#00e676'][i % 3] }} />
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+            {stats.activePairs.map((p, i) => {
+              const active = p.symbol === pair.symbol
+              const color = ['#a78bfa', '#3b82f6', '#00e676'][i % 3]
+              return (
+                <button
+                  key={p.symbol}
+                  type="button"
+                  onClick={() => setSelectedPair(p.symbol)}
+                  style={{
+                    padding: '10px 12px',
+                    background: active ? color + '18' : '#0d0d0d',
+                    border: `1px solid ${active ? color + '70' : '#222'}`,
+                    borderRadius: 8,
+                    color: '#fff',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 5 }}>
+                    <span style={{ fontSize: 12, fontWeight: 800 }}>{p.symbol}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color }}>{p.allocation}%</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#555' }}>Funding {p.currentFundingRate.toFixed(4)}% / 8h</div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Long / Short positions ────────────────────────── */}
-      <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
-        <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 1, marginBottom: 14 }}>POSITION BREAKDOWN</div>
+      {pair && <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 1 }}>POSITION BREAKDOWN</div>
+          <div style={{ fontSize: 11, color: '#a78bfa', fontWeight: 800 }}>{pair.symbol} · {pair.allocation}% alloc</div>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: 9, color: '#3b82f6', fontWeight: 600, marginBottom: 4, letterSpacing: 0.8 }}>LONG (BTC-PERP)</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{formatCurrency(stats.longSize, true)}</div>
+            <div style={{ fontSize: 9, color: '#3b82f6', fontWeight: 600, marginBottom: 4, letterSpacing: 0.8 }}>LONG ({pair.symbol})</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{formatCurrency(pair.longSize, true)}</div>
             <div style={{ fontSize: 10, color: '#555' }}>notional</div>
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 9, color: '#555', fontWeight: 600, marginBottom: 4, letterSpacing: 0.8 }}>NET DELTA</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: Math.abs(stats.netDelta) < 10 ? '#00e676' : '#f97316' }}>
-              {stats.netDelta >= 0 ? '+' : ''}{formatCurrency(stats.netDelta)}
+            <div style={{ fontSize: 16, fontWeight: 800, color: Math.abs(pair.netDelta) < 10 ? '#00e676' : '#f97316' }}>
+              {pair.netDelta >= 0 ? '+' : ''}{formatCurrency(pair.netDelta)}
             </div>
             <div style={{ fontSize: 10, color: '#555' }}>≈ market neutral</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 9, color: '#f97316', fontWeight: 600, marginBottom: 4, letterSpacing: 0.8 }}>SHORT (BTC-PERP)</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{formatCurrency(stats.shortSize, true)}</div>
+            <div style={{ fontSize: 9, color: '#f97316', fontWeight: 600, marginBottom: 4, letterSpacing: 0.8 }}>SHORT ({pair.symbol})</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>{formatCurrency(pair.shortSize, true)}</div>
             <div style={{ fontSize: 10, color: '#555' }}>notional</div>
           </div>
         </div>
 
         {/* Balance bar */}
         <div style={{ height: 6, background: '#1a1a1a', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
-          <div style={{ flex: stats.longSize, background: '#3b82f6', borderRadius: '3px 0 0 3px' }} />
+          <div style={{ flex: pair.longSize, background: '#3b82f6', borderRadius: '3px 0 0 3px' }} />
           <div style={{ width: 2, background: '#0a0a0a' }} />
-          <div style={{ flex: stats.shortSize, background: '#f97316', borderRadius: '0 3px 3px 0' }} />
+          <div style={{ flex: pair.shortSize, background: '#f97316', borderRadius: '0 3px 3px 0' }} />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
           <span style={{ fontSize: 10, color: '#3b82f6' }}>Long 50%</span>
@@ -125,20 +173,20 @@ export default function DeltaNeutralStatsPanel({ stats }: Props) {
           <div style={{ fontSize: 10, color: '#555', marginBottom: 2 }}>COLLATERAL USED</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ flex: 1, height: 4, background: '#1a1a1a', borderRadius: 2, marginRight: 10 }}>
-              <div style={{ width: `${(stats.collateralUsed / (stats.longSize * 0.15)) * 100}%`, height: '100%', background: '#a78bfa', borderRadius: 2 }} />
+              <div style={{ width: `${(pair.collateralUsed / (pair.longSize * 0.15)) * 100}%`, height: '100%', background: '#a78bfa', borderRadius: 2 }} />
             </div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{formatCurrency(stats.collateralUsed, true)}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>{formatCurrency(pair.collateralUsed, true)}</span>
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* ── Funding rate history ──────────────────────────── */}
-      <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
+      {pair && <div className="card" style={{ padding: '16px', marginBottom: 16 }}>
         <div style={{ fontSize: 11, color: '#555', fontWeight: 600, letterSpacing: 1, marginBottom: 12 }}>
-          FUNDING RATE HISTORY (% per 8h) — 90 days
+          FUNDING RATE HISTORY ({pair.symbol} · % per 8h) — 90 days
         </div>
         <ResponsiveContainer width="100%" height={160}>
-          <AreaChart data={stats.fundingRateHistory} margin={{ top: 4, right: 0, bottom: 0, left: -8 }}>
+          <AreaChart data={pair.fundingRateHistory} margin={{ top: 4, right: 0, bottom: 0, left: -8 }}>
             <defs>
               <linearGradient id="frGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.35} />
@@ -153,7 +201,7 @@ export default function DeltaNeutralStatsPanel({ stats }: Props) {
             <Area type="monotone" dataKey="rate" stroke="#a78bfa" strokeWidth={2} fill="url(#frGrad)" dot={false} />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </div>}
 
       {/* ── Cumulative yield ─────────────────────────────── */}
       <div className="card" style={{ padding: '16px', marginBottom: 16 }}>

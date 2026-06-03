@@ -1,4 +1,5 @@
 // Mock trading & delta-neutral stats per vault
+import { MOCK_NOW, createSeededRandom } from '@/lib/mockRandom'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,12 +71,23 @@ export interface DeltaNeutralStats {
   nextFundingMs: number
   fundingRateHistory: { date: string; rate: number; cumYield: number }[]
   recentPayments: FundingPayment[]
+  activePairs: {
+    symbol: string
+    allocation: number
+    currentFundingRate: number
+    annualizedYield: number
+    longSize: number
+    shortSize: number
+    netDelta: number
+    collateralUsed: number
+    fundingRateHistory: { date: string; rate: number; cumYield: number }[]
+  }[]
 }
 
 // ─── Generators ──────────────────────────────────────────────────────────────
 
 function daysAgo(n: number): string {
-  const d = new Date()
+  const d = new Date(MOCK_NOW)
   d.setDate(d.getDate() - n)
   return d.toISOString().split('T')[0]
 }
@@ -89,7 +101,8 @@ function makeTradingStats(
   strategies: { name: string; version: string; allocation: number }[],
   days = 120,
 ): TradingStats {
-  const actualApy      = targetApr * (0.85 + Math.random() * 0.3)
+  const rand = createSeededRandom(`trading-${base}-${targetApr}-${winRate}-${riskScore}-${maxDD}-${days}`)
+  const actualApy      = targetApr * (0.85 + rand() * 0.3)
   const deals          = Math.floor(days * 0.5)
   const winCount       = Math.round(deals * winRate / 100)
   const lossCount      = deals - winCount
@@ -110,17 +123,17 @@ function makeTradingStats(
   const equityHistory: TradingStats['equityHistory'] = []
   let equity = base
   for (let i = days; i >= 0; i--) {
-    const daily = (actualApy / 100 / 365) * equity * (0.5 + Math.random())
+    const daily = (actualApy / 100 / 365) * equity * (0.5 + rand())
     equity += daily
-    const dd = Math.random() < 0.1 ? Math.random() * maxDD * 0.6 : Math.random() * maxDD * 0.1
+    const dd = rand() < 0.1 ? rand() * maxDD * 0.6 : rand() * maxDD * 0.1
     equityHistory.push({ date: daysAgo(i), equity: Math.round(equity * 100) / 100, balance: Math.round((equity - daily * 0.1) * 100) / 100, drawdown: Math.round(dd * 100) / 100 })
   }
 
   const pnlHistory: TradingStats['pnlHistory'] = []
   let cumPnl = 0
   for (let i = days; i >= 0; i--) {
-    const sign = Math.random() < winRate / 100 ? 1 : -1
-    const pnl  = sign * (Math.random() * avgWin * 1.5)
+    const sign = rand() < winRate / 100 ? 1 : -1
+    const pnl  = sign * (rand() * avgWin * 1.5)
     cumPnl += pnl
     pnlHistory.push({ date: daysAgo(i), pnl: Math.round(pnl * 100) / 100, cumPnl: Math.round(cumPnl * 100) / 100 })
   }
@@ -128,20 +141,20 @@ function makeTradingStats(
   const volumeHistory: TradingStats['volumeHistory'] = []
   let cumLots = 0
   for (let i = days; i >= 0; i--) {
-    const lots = 0.01 + Math.random() * 0.04
+    const lots = 0.01 + rand() * 0.04
     cumLots += lots
     volumeHistory.push({ date: daysAgo(i), lots: Math.round(lots * 1000) / 1000, cumLots: Math.round(cumLots * 1000) / 1000 })
   }
 
   return {
     totalBalance:        Math.round((base + netProfit) * 100) / 100,
-    totalEquity:         Math.round((base + netProfit + Math.random() * 50) * 100) / 100,
+    totalEquity:         Math.round((base + netProfit + rand() * 50) * 100) / 100,
     totalPnL:            Math.round(netProfit * 100) / 100,
     roi:                 Math.round((netProfit / base) * 1000) / 10,
     irrAnnualized:       Math.round(actualApy * 0.8 * 10) / 10,
     maxDrawdown:         maxDD,
-    currentDrawdown:     Math.round(Math.random() * maxDD * 0.3 * 100) / 100,
-    recoveryTime:        Math.round(10 + Math.random() * 20),
+    currentDrawdown:     Math.round(rand() * maxDD * 0.3 * 100) / 100,
+    recoveryTime:        Math.round(10 + rand() * 20),
     riskScore,
     sharpeRatio:         sharpe,
     sortinoRatio:        sortino,
@@ -163,9 +176,9 @@ function makeTradingStats(
     winCount,
     lossCount,
     allTimeReturn:       Math.round(actualApy * (days / 365) * 10) / 10,
-    return30d:           Math.round(actualApy / 12 * (0.8 + Math.random() * 0.4) * 10) / 10,
-    return90d:           Math.round(actualApy / 4 * (0.8 + Math.random() * 0.4) * 10) / 10,
-    returnYtd:           Math.round(actualApy * 0.5 * (0.8 + Math.random() * 0.4) * 10) / 10,
+    return30d:           Math.round(actualApy / 12 * (0.8 + rand() * 0.4) * 10) / 10,
+    return90d:           Math.round(actualApy / 4 * (0.8 + rand() * 0.4) * 10) / 10,
+    returnYtd:           Math.round(actualApy * 0.5 * (0.8 + rand() * 0.4) * 10) / 10,
     grossProfitBeforeFee: Math.round(grossBeforeFee * 100) / 100,
     performanceFeePaid:   Math.round(perfFee * 100) / 100,
     netProfit:            Math.round(netProfit * 100) / 100,
@@ -175,55 +188,81 @@ function makeTradingStats(
     volumeHistory,
     activeStrategies: strategies.map(s => ({
       ...s,
-      return: Math.round(actualApy * (s.allocation / 100) * (0.7 + Math.random() * 0.6) * 10) / 10,
-      mdd:    Math.round(maxDD * (0.5 + Math.random() * 0.5) * 100) / 100,
+      return: Math.round(actualApy * (s.allocation / 100) * (0.7 + rand() * 0.6) * 10) / 10,
+      mdd:    Math.round(maxDD * (0.5 + rand() * 0.5) * 100) / 100,
     })),
   }
 }
 
-function makeDeltaStats(tvl: number, fundingRate: number): DeltaNeutralStats {
-  const perAnnum  = fundingRate * 3 * 365
-  const dailyYield = (fundingRate / 100) * 3 * 1000
-  const posSize   = tvl * 0.48
-  const collected = tvl * 0.08
-
+function makeFundingHistory(seed: string, fundingRate: number, days = 90) {
+  const rand = createSeededRandom(seed)
   const fundingRateHistory: DeltaNeutralStats['fundingRateHistory'] = []
   let cumYield = 0
-  for (let i = 90; i >= 0; i--) {
-    const noise = (Math.random() - 0.5) * 0.008
+  for (let i = days; i >= 0; i--) {
+    const noise = (rand() - 0.5) * 0.008
     const rate  = Math.max(0.001, fundingRate + noise)
     cumYield   += rate * 3
     fundingRateHistory.push({ date: daysAgo(i), rate: Math.round(rate * 10000) / 10000, cumYield: Math.round(cumYield * 100) / 100 })
   }
+  return fundingRateHistory
+}
+
+function makeDeltaStats(tvl: number, fundingRate: number): DeltaNeutralStats {
+  const rand = createSeededRandom(`delta-${tvl}-${fundingRate}`)
+  const perAnnum  = fundingRate * 3 * 365
+  const dailyYield = (fundingRate / 100) * 3 * 1000
+  const posSize   = tvl * 0.48
+  const collected = tvl * 0.08
+  const activePairs = [
+    { symbol: 'BTC-PERP', allocation: 45, rate: fundingRate + 0.004 },
+    { symbol: 'ETH-PERP', allocation: 35, rate: fundingRate - 0.002 },
+    { symbol: 'SOL-PERP', allocation: 20, rate: fundingRate + 0.001 },
+  ].map((pair) => {
+    const pairNotional = posSize * (pair.allocation / 100)
+    return {
+      symbol: pair.symbol,
+      allocation: pair.allocation,
+      currentFundingRate: Math.round(pair.rate * 10000) / 10000,
+      annualizedYield: Math.round(pair.rate * 3 * 365 * 100) / 100,
+      longSize: Math.round(pairNotional * 100) / 100,
+      shortSize: Math.round(pairNotional * 100) / 100,
+      netDelta: Math.round((rand() - 0.5) * 2 * 100) / 100,
+      collateralUsed: Math.round(pairNotional * 0.12 * 100) / 100,
+      fundingRateHistory: makeFundingHistory(`delta-pair-${pair.symbol}-${tvl}`, pair.rate),
+    }
+  })
+
+  const fundingRateHistory = makeFundingHistory(`delta-aggregate-${tvl}-${fundingRate}`, fundingRate)
 
   const recentPayments: FundingPayment[] = Array.from({ length: 10 }, (_, i) => {
-    const noise  = (Math.random() - 0.5) * 0.006
+    const noise  = (rand() - 0.5) * 0.006
     const rate   = Math.max(0.001, fundingRate + noise)
     const amount = (rate / 100) * posSize
-    const d = new Date()
+    const d = new Date(MOCK_NOW)
     d.setHours(d.getHours() - i * 8)
     return { date: d.toISOString(), rate: Math.round(rate * 10000) / 10000, amount: Math.round(amount * 100) / 100, side: 'received' as const }
   })
 
-  const now      = new Date()
+  const now      = new Date(MOCK_NOW)
   const utcH     = now.getUTCHours()
   const nextSlot = [0, 8, 16].find(h => h > utcH) ?? 24
   const diffMs   = ((nextSlot - utcH) * 3600 - now.getUTCMinutes() * 60 - now.getUTCSeconds()) * 1000
 
   return {
     currentFundingRate:    Math.round(fundingRate * 10000) / 10000,
-    prevFundingRate:       Math.round((fundingRate + (Math.random() - 0.5) * 0.004) * 10000) / 10000,
+    prevFundingRate:       Math.round((fundingRate + (rand() - 0.5) * 0.004) * 10000) / 10000,
     annualizedYield:       Math.round(perAnnum * 100) / 100,
     dailyYield:            Math.round(dailyYield * 1000) / 1000,
     longSize:              Math.round(posSize * 100) / 100,
     shortSize:             Math.round(posSize * 100) / 100,
-    netDelta:              Math.round((Math.random() - 0.5) * 4 * 100) / 100,
+    netDelta:              Math.round((rand() - 0.5) * 4 * 100) / 100,
     collateralUsed:        Math.round(posSize * 0.12 * 100) / 100,
     totalFundingCollected: Math.round(collected * 100) / 100,
-    positionHealth:        92 + Math.round(Math.random() * 6),
+    positionHealth:        92 + Math.round(rand() * 6),
     nextFundingMs:         diffMs > 0 ? diffMs : diffMs + 8 * 3600 * 1000,
     fundingRateHistory,
     recentPayments,
+    activePairs,
   }
 }
 

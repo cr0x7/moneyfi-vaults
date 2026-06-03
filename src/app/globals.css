@@ -104,6 +104,16 @@ body {
 }
 .input-field::placeholder { color: #444; }
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @keyframes pulse-green {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.4; }
@@ -181,7 +191,7 @@ body {
 }
 @media (min-width: 900px) {
   .vault-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -1,11 +1,13 @@
 import { Vault, UserPosition } from '@/lib/types'
+import { MOCK_NOW, createSeededRandom } from '@/lib/mockRandom'
 
 function generateAPYHistory(baseApy: number, boost: number, days = 90) {
-  const now = new Date()
+  const now = new Date(MOCK_NOW)
+  const rand = createSeededRandom(`apy-${baseApy}-${boost}-${days}`)
   return Array.from({ length: days }, (_, i) => {
     const date = new Date(now)
     date.setDate(date.getDate() - (days - i))
-    const noise = (Math.random() - 0.5) * 4
+    const noise = (rand() - 0.5) * 4
     const base = Math.max(baseApy + noise * 0.6, 1)
     const boostVal = Math.max(boost + noise * 0.4, 0)
     return { date: date.toISOString().split('T')[0], apy: base + boostVal, base, boost: boostVal }
@@ -13,12 +15,13 @@ function generateAPYHistory(baseApy: number, boost: number, days = 90) {
 }
 
 function generateTVLHistory(currentTVL: number, days = 180) {
-  const now = new Date()
+  const now = new Date(MOCK_NOW)
+  const rand = createSeededRandom(`tvl-${currentTVL}-${days}`)
   let tvl = currentTVL * 0.1
   return Array.from({ length: days }, (_, i) => {
     const date = new Date(now)
     date.setDate(date.getDate() - (days - i))
-    const growth = 1 + (Math.random() * 0.04 - 0.005)
+    const growth = 1 + (rand() * 0.04 - 0.005)
     tvl = Math.min(tvl * growth, currentTVL * 1.05)
     return { date: date.toISOString().split('T')[0], tvl: Math.round(tvl) }
   })

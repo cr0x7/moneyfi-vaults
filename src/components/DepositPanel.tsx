@@ -11,23 +11,24 @@ interface DepositPanelProps {
   operatorTimeline?: { phase: string; progress: number; estimatedRemaining: string; lastUpdated: string } | null
 }
 
-/* ─── Activation (deposit) flow — 5 steps per PRD §10 ─── */
+/* ─── Activation (deposit) flow — 6 steps per PRD §12 ─── */
 const ACTIVATION_STEPS = [
   { key: 'deposit', label: 'Deposit Confirmed', est: '1-2 min' },
-  { key: 'exness', label: 'Exness Account Created', est: '3-5 min' },
-  { key: 'senti', label: 'Senti Engine Linked', est: '5-10 min' },
-  { key: 'strategy', label: 'Strategy Deployed', est: '10-15 min' },
-  { key: 'active', label: 'Vault Active', est: '15-30 min' },
+  { key: 'transfer', label: 'Bridge / Fund Transfer', est: '3-8 min' },
+  { key: 'account', label: 'Create Account', est: '5-10 min' },
+  { key: 'link', label: 'Link Account', est: '2-5 min' },
+  { key: 'strategy', label: 'Strategy Deployment', est: '10-15 min' },
+  { key: 'active', label: 'Trading Active', est: '15-30 min' },
 ]
 
 /* ─── Withdrawal flow — 6 steps per PRD §11 ─── */
 const WITHDRAWAL_STEPS = [
-  'Withdrawal Requested',
-  'Pause Strategy',
-  'Close Positions',
-  'Settle PnL & Fees',
-  'Transfer Back',
-  'Completed',
+  { label: 'Withdrawal Requested', est: 'Instant' },
+  { label: 'Pause Strategy', est: '1-5 min' },
+  { label: 'Close Positions', est: '15-45 min' },
+  { label: 'Settle PnL & Fees', est: '5-15 min' },
+  { label: 'Transfer Back', est: '1-3 business days' },
+  { label: 'Completed', est: 'Final' },
 ]
 
 type FlowTab = 'deposit' | 'withdraw'
@@ -114,6 +115,56 @@ function TokenSelector({ value, tokens, onChange }: { value: TokenSymbol; tokens
   )
 }
 
+function FlowTimeline({ steps, activeStep, accent, preview = false }: { steps: { label: string; est: string }[]; activeStep: number; accent: string; preview?: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {steps.map((step, i) => {
+        const done = !preview && i < activeStep
+        const current = !preview && i === activeStep
+        const isLast = i === steps.length - 1
+
+        return (
+          <div key={step.label} style={{ display: 'grid', gridTemplateColumns: '18px 1fr auto', gap: 12, alignItems: 'start', minHeight: isLast ? 42 : 50 }}>
+            <div style={{ position: 'relative', width: 18, minHeight: isLast ? 24 : 44, display: 'flex', justifyContent: 'center' }}>
+              {!isLast && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 16,
+                    bottom: -2,
+                    width: 1,
+                    background: done ? accent : '#2a2a2a',
+                  }}
+                />
+              )}
+              <div
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  width: current ? 12 : 9,
+                  height: current ? 12 : 9,
+                  marginTop: 4,
+                  borderRadius: '50%',
+                  background: done ? accent : current ? '#0d0d0d' : '#222',
+                  border: `2px solid ${done || current ? accent : '#3a3a3a'}`,
+                  boxShadow: current ? `0 0 0 4px ${accent}22` : 'none',
+                }}
+              />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: done || current ? '#fff' : preview ? '#777' : '#444', lineHeight: 1.25 }}>{step.label}</div>
+              <div style={{ fontSize: 10, color: done || current ? '#666' : preview ? '#555' : '#3f3f3f', marginTop: 3 }}>{step.est}</div>
+              {current && <div style={{ fontSize: 10, color: accent, marginTop: 3 }}>In progress...</div>}
+            </div>
+            {done && <span style={{ fontSize: 12, color: '#00e676', lineHeight: '20px' }}>✓</span>}
+            {current && <span style={{ fontSize: 9, color: accent, fontWeight: 800, lineHeight: '20px' }}>ACTIVE</span>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function DepositPanel({ vault, position, operatorTimeline }: DepositPanelProps) {
   const isSenti = vault.category === 'TRADING'
   const [tab, setTab] = useState<FlowTab>('deposit')
@@ -128,6 +179,7 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
   const numAmount = parseFloat(amount) || 0
   const apy = vault.targetApr ?? vault.apy
   const perfFee = vault.performanceFee ?? 0
+  const withdrawableAmount = position?.currentValue ?? 0
 
   function startActivation() {
     if (numAmount < vault.minDeposit) return
@@ -219,7 +271,7 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>AMOUNT</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '10px 10px 10px 14px' }}>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min $${vault.minDeposit.toLocaleString()}`} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <input type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min $${vault.minDeposit.toLocaleString()}`} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
               <TokenSelector value={token} tokens={vault.supportedTokens} onChange={setToken} />
             </div>
             {numAmount > 0 && numAmount < vault.minDeposit && (
@@ -320,26 +372,7 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Activating your vault…</div>
           <div style={{ fontSize: 11, color: '#555', marginBottom: 20 }}>Estimated time: 15–30 minutes</div>
-          {ACTIVATION_STEPS.map((s, i) => {
-            const done = i < activationStep
-            const current = i === activationStep
-            return (
-              <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                  background: done ? '#f97316' : current ? '#1a0e00' : '#111',
-                  border: `2px solid ${done ? '#f97316' : current ? '#f97316' : '#333'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700, color: done ? '#000' : current ? '#f97316' : '#444',
-                }}>{done ? '✓' : i + 1}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: done ? '#fff' : current ? '#fff' : '#444' }}>{s.label}</div>
-                  {current && <div style={{ fontSize: 10, color: '#f97316', marginTop: 2 }}>In progress…</div>}
-                </div>
-                {done && <span style={{ fontSize: 12, color: '#00e676' }}>✓</span>}
-              </div>
-            )
-          })}
+          <FlowTimeline steps={ACTIVATION_STEPS} activeStep={activationStep ?? 0} accent="#f97316" />
         </div>
       )}
 
@@ -362,29 +395,46 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>WITHDRAW AMOUNT</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '10px 10px 10px 14px' }}>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <input type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
               <TokenSelector value={token} tokens={vault.supportedTokens} onChange={setToken} />
             </div>
+            {withdrawableAmount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#444', marginTop: 5 }}>
+                <span>Available</span>
+                <span>{formatCurrency(withdrawableAmount)} {position?.token}</span>
+              </div>
+            )}
           </div>
 
-          {/* Withdrawal timeline preview (static) */}
-          {isSenti && (
-            <div style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, padding: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 8 }}>WITHDRAWAL TIMELINE</div>
-              {WITHDRAWAL_STEPS.map((s) => (
-                <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: '#666' }}>{s}</span>
-                </div>
-              ))}
-              <div style={{ marginTop: 8, fontSize: 10, color: '#555' }}>Estimated processing time: 1–3 business days</div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 14 }}>
+            {[25, 50, 75, 100].map((pct) => (
+              <button
+                key={pct}
+                onClick={() => setAmount(((withdrawableAmount || vault.minDeposit) * pct / 100).toFixed(2))}
+                style={{
+                  padding: '6px 0',
+                  background: '#1a1a1a',
+                  border: '1px solid #222',
+                  borderRadius: 6,
+                  color: '#888',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
+
+          {withdrawableAmount > 0 && numAmount > withdrawableAmount && (
+            <div style={{ fontSize: 10, color: '#ef4444', marginBottom: 14 }}>Amount exceeds available balance</div>
           )}
 
-          <button onClick={startWithdrawal} disabled={numAmount <= 0} style={{
+          <button onClick={startWithdrawal} disabled={numAmount <= 0 || (withdrawableAmount > 0 && numAmount > withdrawableAmount)} style={{
             width: '100%', padding: '14px', fontSize: 14, letterSpacing: 1, fontWeight: 700,
             background: 'transparent', border: '1px solid #333', borderRadius: 8,
-            color: '#888', cursor: 'pointer', opacity: numAmount > 0 ? 1 : 0.4,
+            color: '#888', cursor: 'pointer', opacity: (numAmount > 0 && !(withdrawableAmount > 0 && numAmount > withdrawableAmount)) ? 1 : 0.4,
           }}>WITHDRAW →</button>
         </>
       )}
@@ -394,26 +444,7 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Processing withdrawal…</div>
           <div style={{ fontSize: 11, color: '#555', marginBottom: 20 }}>Estimated time: 1–3 business days</div>
-          {WITHDRAWAL_STEPS.map((s, i) => {
-            const done = i < withdrawalStep
-            const current = i === withdrawalStep
-            return (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                  background: done ? '#00e676' : current ? '#0a1a0f' : '#111',
-                  border: `2px solid ${done ? '#00e676' : current ? '#00e676' : '#333'}`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700, color: done ? '#000' : current ? '#00e676' : '#444',
-                }}>{done ? '✓' : i + 1}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: done ? '#fff' : current ? '#fff' : '#444' }}>{s}</div>
-                  {current && <div style={{ fontSize: 10, color: '#00e676', marginTop: 2 }}>In progress…</div>}
-                </div>
-                {done && <span style={{ fontSize: 12, color: '#00e676' }}>✓</span>}
-              </div>
-            )
-          })}
+          <FlowTimeline steps={WITHDRAWAL_STEPS} activeStep={withdrawalStep ?? 0} accent="#00e676" />
         </div>
       )}
 
@@ -447,6 +478,16 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === 'withdraw' && !showWithdrawalRunning && !withdrawalDone && (
+        <div style={{ background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: 8, padding: 12, marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ fontSize: 10, color: '#555', fontWeight: 700, letterSpacing: 0.8 }}>WITHDRAWAL TIMELINE</div>
+            <div style={{ fontSize: 10, color: '#666' }}>1-3 business days</div>
+          </div>
+          <FlowTimeline steps={WITHDRAWAL_STEPS} activeStep={0} accent="#00e676" preview />
         </div>
       )}
     </div>

@@ -402,7 +402,8 @@ export default function CreateVaultWizard() {
             >
               <div style={{ flex: 1, minWidth: 0 }}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={deposit}
                   onChange={(e) => setDeposit(e.target.value)}
                   placeholder="0.00"

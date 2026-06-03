@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Vault } from '@/lib/types'
+import { DELTA_STATS, TRADING_STATS } from '@/data/strategyStats'
 import { formatCurrency, formatAPY, riskBgColor } from '@/lib/utils'
 
 interface VaultCardProps {
@@ -34,12 +35,20 @@ const SENTI_TIER_META: Record<string, { label: string; color: string }> = {
   AGGRESSIVE:   { label: 'Aggressive',   color: '#ef4444' },
 }
 
+const ALLOCATION_COLORS = ['#f97316', '#a78bfa', '#00e676', '#3b82f6']
+
 export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
   const tvlChangePositive = vault.tvlChange >= 0
   const catMeta    = CATEGORY_META[vault.category] ?? CATEGORY_META['TRADING']
   const tierMeta   = vault.sentiTier ? SENTI_TIER_META[vault.sentiTier] : null
   const isSenti    = vault.category === 'TRADING'
   const displayAPY = vault.targetApr ?? vault.apy
+  const maxDrawdown = vault.category === 'TRADING' ? (TRADING_STATS[vault.id]?.maxDrawdown ?? 0) : 0
+  const allocationItems = vault.category === 'TRADING'
+    ? (TRADING_STATS[vault.id]?.activeStrategies ?? []).map((s, index) => ({ name: s.name, allocation: s.allocation, color: ALLOCATION_COLORS[index % ALLOCATION_COLORS.length] }))
+    : vault.category === 'DELTA_NEUTRAL'
+      ? (DELTA_STATS[vault.id]?.activePairs ?? []).map((p, index) => ({ name: p.symbol, allocation: p.allocation, color: ALLOCATION_COLORS[index % ALLOCATION_COLORS.length] }))
+      : vault.protocols.map((p) => ({ name: p.name, allocation: p.percentage, color: p.color }))
 
   return (
     <Link href={`/vault/${vault.id}`} style={{ textDecoration: 'none', display: 'block' }}>
@@ -156,8 +165,8 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
           )}
         </div>
 
-        {/* TVL + min deposit */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+        {/* TVL + min deposit + MDD */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 9, color: '#444', marginBottom: 2, letterSpacing: 0.6 }}>TVL</div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{formatCurrency(vault.tvl, true)}</div>
@@ -170,21 +179,26 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>${vault.minDeposit}</div>
             <div style={{ fontSize: 10, color: '#555' }}>{vault.supportedTokens.join(' · ')}</div>
           </div>
+          <div>
+            <div style={{ fontSize: 9, color: '#444', marginBottom: 2, letterSpacing: 0.6 }}>MDD</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: maxDrawdown > 0 ? '#ef4444' : '#00e676' }}>{maxDrawdown}%</div>
+            <div style={{ fontSize: 10, color: '#555' }}>Max drawdown</div>
+          </div>
         </div>
 
-        {/* Protocol allocation bar — LP only */}
-        {vault.category === 'LP' && (
+        {/* Allocation bar */}
+        {allocationItems.length > 0 && (
           <div style={{ marginBottom: 10 }}>
             <div style={{ height: 3, borderRadius: 2, overflow: 'hidden', display: 'flex' }}>
-              {vault.protocols.map((p) => (
-                <div key={p.name} style={{ width: `${p.percentage}%`, background: p.color }} />
+              {allocationItems.map((item) => (
+                <div key={item.name} style={{ width: `${item.allocation}%`, background: item.color }} />
               ))}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 5, flexWrap: 'wrap' }}>
-              {vault.protocols.slice(0, 3).map((p) => (
-                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: p.color }} />
-                  <span style={{ fontSize: 10, color: '#555' }}>{p.name}</span>
+              {allocationItems.slice(0, 3).map((item) => (
+                <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: item.color }} />
+                  <span style={{ fontSize: 10, color: '#555' }}>{item.name}</span>
                 </div>
               ))}
             </div>
