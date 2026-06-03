@@ -53,8 +53,8 @@ export default function VaultDetailPage() {
       </div>
 
       <div className="detail-grid">
-        {/* ── Left column ───────────────────────────────────── */}
-        <div>
+        {/* ── Top content ───────────────────────────────────── */}
+        <div className="detail-main-top">
 
           {/* Vault header */}
           <div style={{ marginBottom: 20 }}>
@@ -109,6 +109,15 @@ export default function VaultDetailPage() {
               <div style={{ fontSize: 10, color: '#555', marginTop: 4 }}>earned by depositors</div>
             </div>
           </div>
+        </div>
+
+        {/* ── Deposit Panel ───────────────────── */}
+        <div className="deposit-sticky">
+          <DepositPanel vault={vault} position={position} />
+        </div>
+
+        {/* ── Analytics content ───────────────────────────────────── */}
+        <div className="detail-main-content">
 
           {/* ── LP: APY chart + TVL chart + Protocol Allocation ── */}
           {vault.category === 'LP' && (
@@ -193,11 +202,6 @@ export default function VaultDetailPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* ── Right column — Deposit Panel ───────────────────── */}
-        <div className="deposit-sticky">
-          <DepositPanel vault={vault} position={position} />
         </div>
       </div>
     </div>

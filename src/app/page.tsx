@@ -52,6 +52,7 @@ export default function VaultsPage() {
   const [risk,     setRisk]     = useState<string>('ALL')
   const [search,   setSearch]   = useState('')
   const [sort,     setSort]     = useState<'apy' | 'tvl' | 'newest'>('apy')
+  const [filterOpen, setFilterOpen] = useState(false)
 
   const totalTVL       = VAULTS.reduce((s, v) => s + v.tvl, 0)
   const userTotalValue = USER_POSITIONS.reduce((s, p) => s + p.currentValue, 0)
@@ -234,8 +235,51 @@ export default function VaultsPage() {
             </div>
           </div>
 
+          <button
+            className="mobile-filter-trigger"
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px solid #333',
+              background: '#111',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: 0.8,
+              cursor: 'pointer',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 6,
+                border: '1px solid #00e67655',
+                background: '#00e67612',
+                color: '#00e676',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 13,
+                flexShrink: 0,
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 5h16l-6.4 7.3v5.2L10.4 20v-7.7L4 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span style={{ color: '#00e676' }}>{category === 'ALL' ? 'All Types' : CATEGORY_META[category].label} · {risk === 'ALL' ? 'All Risks' : risk}</span>
+          </button>
+
           {/* Filter row: category tabs + risk chips + search */}
-          <div className="filters-bar">
+          <div className="filters-bar filters-desktop">
             {/* Category tabs */}
             <div className="filter-chips">
               <button
@@ -309,6 +353,99 @@ export default function VaultsPage() {
               />
             </div>
           </div>
+
+          {filterOpen && (
+            <div
+              className="filter-popup"
+              onClick={() => setFilterOpen(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 90,
+                background: 'rgba(0,0,0,0.58)',
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'flex-end',
+              }}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  width: '100%',
+                  background: '#101010',
+                  borderTop: '1px solid #2a2a2a',
+                  borderRadius: '14px 14px 0 0',
+                  padding: 16,
+                  boxShadow: '0 -24px 70px rgba(0,0,0,0.45)',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                  <div style={{ fontSize: 13, color: '#fff', fontWeight: 900, letterSpacing: 1 }}>FILTER VAULTS</div>
+                  <button
+                    type="button"
+                    onClick={() => setFilterOpen(false)}
+                    style={{ width: 28, height: 28, borderRadius: 6, border: '1px solid #333', background: '#151515', color: '#888', cursor: 'pointer' }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div style={{ fontSize: 10, color: '#555', fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>TYPE</div>
+                <div className="filter-chips" style={{ marginBottom: 14 }}>
+                  <button
+                    onClick={() => setCategory('ALL')}
+                    style={{ flexShrink: 0, padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1px solid', borderColor: category === 'ALL' ? '#555' : '#222', background: category === 'ALL' ? '#1e1e1e' : 'transparent', color: category === 'ALL' ? '#fff' : '#555' }}
+                  >
+                    All Types
+                  </button>
+                  {(Object.entries(CATEGORY_META) as [VaultCategory, typeof CATEGORY_META[VaultCategory]][]).map(([id, meta]) => {
+                    const active = category === id
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => setCategory(active ? 'ALL' : id)}
+                        style={{ flexShrink: 0, padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1px solid', borderColor: active ? meta.color + '80' : '#222', background: active ? meta.bg : 'transparent', color: active ? meta.color : '#555', display: 'flex', alignItems: 'center', gap: 4 }}
+                      >
+                        <span>{meta.icon}</span> {meta.label}
+                      </button>
+                    )
+                  })}
+                </div>
+
+                <div style={{ fontSize: 10, color: '#555', fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>RISK</div>
+                <div className="filter-chips" style={{ marginBottom: 14 }}>
+                  {RISK_FILTERS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => setRisk(r)}
+                      style={{ flexShrink: 0, padding: '8px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer', border: '1px solid', borderColor: risk === r ? '#888' : '#222', background: risk === r ? '#1a1a1a' : 'transparent', color: risk === r ? '#fff' : '#555' }}
+                    >
+                      {r === 'ALL' ? 'All Risks' : r}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '9px 12px', gap: 8, marginBottom: 14 }}>
+                  <span style={{ fontSize: 12, color: '#444' }}>🔍</span>
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search vaults..."
+                    style={{ background: 'none', border: 'none', outline: 'none', fontSize: 12, color: '#fff', width: '100%' }}
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setFilterOpen(false)}
+                  style={{ width: '100%', padding: 12, borderRadius: 8, border: 'none', background: '#00e676', color: '#000', fontSize: 12, fontWeight: 900, cursor: 'pointer' }}
+                >
+                  APPLY FILTERS
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Category description line — 1 line only, appears when filtered */}
           {activeCatMeta && (

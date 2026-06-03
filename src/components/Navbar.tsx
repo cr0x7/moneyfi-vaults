@@ -21,6 +21,8 @@ const WALLET_PROVIDERS = [
 export default function Navbar() {
   const pathname = usePathname()
   const [walletOpen, setWalletOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [connectedWallet, setConnectedWallet] = useState<string | null>(null)
 
   function connectWallet(provider: string) {
@@ -28,8 +30,21 @@ export default function Navbar() {
     setWalletOpen(false)
   }
 
+  function handleTouchEnd(endX: number) {
+    if (touchStartX === null) return
+    const delta = endX - touchStartX
+    setTouchStartX(null)
+
+    if (Math.abs(delta) < 70) return
+    if (delta < 0) setNavOpen(true)
+    if (delta > 0) setNavOpen(false)
+  }
+
   return (
-    <>
+    <div
+      onTouchStart={(e) => setTouchStartX(e.touches[0]?.clientX ?? null)}
+      onTouchEnd={(e) => handleTouchEnd(e.changedTouches[0]?.clientX ?? 0)}
+    >
       <nav
         style={{
           background: 'rgba(10,10,10,0.95)',
@@ -63,7 +78,7 @@ export default function Navbar() {
           </Link>
 
           {/* Nav tabs */}
-          <div style={{ display: 'flex', gap: 3 }}>
+          <div className="nav-tabs" style={{ gap: 3 }}>
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href
               return (
@@ -95,6 +110,7 @@ export default function Navbar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             {/* CREATE VAULT */}
             <Link
+              className="nav-create"
               href="/create"
               style={{
                 padding: '5px 12px',
@@ -108,11 +124,10 @@ export default function Navbar() {
                 whiteSpace: 'nowrap',
               }}
             >
-              <span className="nav-create-label">+ CREATE VAULT</span>
-              <span className="hide-on-desktop">+</span>
+              + CREATE VAULT
             </Link>
 
-            {/* CONNECT WALLET — hidden on mobile */}
+            {/* CONNECT WALLET */}
             <button
               className="nav-connect"
               onClick={() => setWalletOpen(true)}
@@ -142,9 +157,102 @@ export default function Navbar() {
               />
               <span style={{ fontSize: 10, color: '#00e676', fontWeight: 600 }}>LIVE</span>
             </div>
+
+            <button
+              type="button"
+              className="nav-menu-trigger"
+              onClick={() => setNavOpen((next) => !next)}
+              aria-label="Open navigation menu"
+              aria-expanded={navOpen}
+              style={{
+                width: 30,
+                height: 28,
+                padding: 0,
+                background: navOpen ? '#00e676' : 'transparent',
+                border: `1px solid ${navOpen ? '#00e676' : '#333'}`,
+                borderRadius: 6,
+                color: navOpen ? '#000' : '#888',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexDirection: 'column',
+                gap: 3,
+              }}
+            >
+              {[0, 1, 2].map((line) => (
+                <span
+                  key={line}
+                  style={{
+                    width: 13,
+                    height: 2,
+                    borderRadius: 2,
+                    background: navOpen ? '#000' : '#888',
+                    display: 'block',
+                  }}
+                />
+              ))}
+            </button>
           </div>
         </div>
       </nav>
+
+      <div
+        className="nav-mobile-menu"
+        onClick={() => setNavOpen(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 49,
+          background: navOpen ? 'rgba(0,0,0,0.48)' : 'rgba(0,0,0,0)',
+          pointerEvents: navOpen ? 'auto' : 'none',
+          transition: 'background 0.2s ease',
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: 'min(78vw, 320px)',
+            paddingTop: 58,
+            background: 'rgba(10,10,10,0.98)',
+            borderLeft: '1px solid #1a1a1a',
+            backdropFilter: 'blur(12px)',
+            transform: navOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.22s ease',
+            boxShadow: navOpen ? '-24px 0 80px rgba(0,0,0,0.45)' : 'none',
+          }}
+        >
+          <div style={{ display: 'grid', gap: 8, padding: '12px 14px' }}>
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setNavOpen(false)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    fontWeight: 800,
+                    letterSpacing: 0.8,
+                    textDecoration: 'none',
+                    background: active ? '#00e676' : '#111',
+                    color: active ? '#000' : '#777',
+                    border: `1px solid ${active ? '#00e676' : '#222'}`,
+                  }}
+                >
+                  {item.label}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </div>
 
       {walletOpen && (
         <div
@@ -281,6 +389,6 @@ export default function Navbar() {
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

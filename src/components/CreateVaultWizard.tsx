@@ -429,6 +429,28 @@ export default function CreateVaultWizard() {
             </div>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+            {[25, 50, 75, 100].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                onClick={() => setDeposit((1000 * (pct / 25)).toFixed(0))}
+                style={{
+                  padding: '8px 0',
+                  background: '#1a1a1a',
+                  border: '1px solid #262626',
+                  borderRadius: 8,
+                  color: '#888',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
+
           {amount > 0 && (
             <div
               style={{

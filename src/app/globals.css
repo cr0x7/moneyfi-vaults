@@ -214,13 +214,27 @@ input[type="number"]::-webkit-inner-spin-button {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  grid-template-areas:
+    "top"
+    "deposit"
+    "content";
 }
+.detail-main-top { grid-area: top; }
+.detail-main-content { grid-area: content; }
 @media (min-width: 1024px) {
-  .detail-grid { grid-template-columns: 1fr 340px; gap: 24px; }
+  .detail-grid {
+    grid-template-columns: 1fr 340px;
+    grid-template-areas:
+      "top deposit"
+      "content deposit";
+    gap: 24px;
+    align-items: start;
+  }
 }
 
 /* Deposit panel: not sticky on mobile (no sidebar) */
 .deposit-sticky {
+  grid-area: deposit;
   position: static;
 }
 @media (min-width: 1024px) {
@@ -253,6 +267,8 @@ input[type="number"]::-webkit-inner-spin-button {
   gap: 10px;
   margin-bottom: 20px;
 }
+.filters-desktop { display: none; }
+.mobile-filter-trigger { display: flex; }
 @media (min-width: 900px) {
   .filters-bar {
     flex-direction: row;
@@ -260,6 +276,9 @@ input[type="number"]::-webkit-inner-spin-button {
     gap: 12px;
     align-items: center;
   }
+  .filters-desktop { display: flex; }
+  .mobile-filter-trigger { display: none !important; }
+  .filter-popup { display: none !important; }
 }
 
 .filter-chips {
@@ -282,15 +301,25 @@ input[type="number"]::-webkit-inner-spin-button {
   flex-wrap: wrap;
 }
 
-/* Navbar: hide some items on small screens */
-.nav-connect { display: none; }
-@media (min-width: 640px) { .nav-connect { display: flex; } }
-
-.nav-create-label { display: none; }
-@media (min-width: 480px) { .nav-create-label { display: inline; } }
-
-.hide-on-desktop { display: inline; }
-@media (min-width: 480px) { .hide-on-desktop { display: none; } }
+/* Navbar: mobile uses menu + wallet only */
+.nav-tabs { display: none; }
+.nav-menu-trigger { display: inline-flex; }
+.nav-create { display: none; }
+.nav-connect { display: flex; }
+@media (max-width: 479px) {
+  .nav-connect {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+    font-size: 10px !important;
+    letter-spacing: 0.2px !important;
+  }
+}
+@media (min-width: 760px) {
+  .nav-tabs { display: flex; }
+  .nav-menu-trigger { display: none !important; }
+  .nav-mobile-menu { display: none; }
+  .nav-create { display: inline-flex; }
+}
 
 /* Category cards: 1-col mobile → 3-col desktop */
 .category-grid {
