@@ -14,7 +14,7 @@ export type StrategyType =
   | 'DELTA_NEUTRAL'
   | 'CUSTOM'
 
-export type TokenSymbol = 'USDT' | 'USDC' | 'APT' | 'BTC' | 'ETH'
+export type TokenSymbol = 'USDT' | 'USDC' | 'APT' | 'BTC' | 'ETH' | 'MONEYFI'
 
 export interface ProtocolAllocation {
   name: string
@@ -105,4 +105,37 @@ export interface CreateVaultConfig {
   token: TokenSymbol
   autoCompound: boolean
   targetApy?: number
+}
+
+// ─── Event Types ──────────────────────────────────────────────────────────────
+
+export type EventType = 'BOOST' | 'CAMPAIGN' | 'COMPETITION' | 'GUIDED_VAULT' | 'REWARD'
+
+export type EventStatus = 'UPCOMING' | 'ACTIVE' | 'ENDED'
+
+export interface EventReward {
+  label: string
+  amount: number
+  token?: TokenSymbol
+}
+
+export interface Event {
+  id: string
+  name: string
+  description: string
+  type: EventType
+  status: EventStatus
+  vaultId?: string
+  startDate: string
+  endDate: string
+  boostApy?: number
+  totalReward?: number
+  rewardToken?: TokenSymbol
+  participants?: number
+  maxParticipants?: number
+  rewards?: EventReward[]
+  icon: string
+  color: string
+  featured?: boolean
+  tags: string[]
 }
