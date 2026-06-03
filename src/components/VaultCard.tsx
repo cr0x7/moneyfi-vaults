@@ -219,13 +219,7 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
           )}
         </div>
 
-        {/* User position */}
-        {userDeposited && (
-          <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #1a3a2a', display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 11, color: '#555' }}>Your deposit</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#00e676' }}>{formatCurrency(userDeposited)}</span>
-          </div>
-        )}
+{/* User position — always rendered for equal card height */} <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${userDeposited ? '#1a3a2a' : '#1a1a1a'}`, display: 'flex', justifyContent: 'space-between' }}> <span style={{ fontSize: 11, color: '#555' }}>Your deposit</span> <span style={{ fontSize: 12, fontWeight: 700, color: userDeposited ? '#00e676' : '#444' }}>{userDeposited ? formatCurrency(userDeposited) : '$0.00'}</span> </div>
       </div>
     </Link>
   )

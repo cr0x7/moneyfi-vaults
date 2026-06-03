@@ -67,6 +67,7 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
   const pnlPositive = stats.totalPnL >= 0
   const profitPct = (stats.grossProfit / (stats.grossProfit + stats.grossLoss)) * 100
   const longPct = (stats.longCount / (stats.longCount + stats.shortCount)) * 100
+  const accountId = `EX-${String(stats.robotCount).padStart(4, '0')}-${String(Math.round(stats.totalEquity) % 9000 + 1000)}`
 
   return (
     <div className="card" style={{ marginBottom: 16, overflow: 'hidden' }}>
@@ -346,7 +347,7 @@ export default function TradingStatsPanel({ stats, performanceFee = 20 }: Props)
                   {[
                     { label: 'User Wallet', icon: '👤', detail: '' },
                     { label: 'MoneyFi Vault', icon: '🏦', detail: '' },
-                    { label: 'Exness Sub Account', icon: '🔗', detail: `ID: EX-${String(stats.robotCount).slice(0, 4).toUpperCase()}-${String(Math.floor(Math.random() * 9000 + 1000))}` },
+                    { label: 'Exness Sub Account', icon: '🔗', detail: `ID: ${accountId}` },
                     { label: 'Current Exposure', icon: '📊', detail: `${formatCurrency(stats.totalEquity * 0.48)} (${((stats.totalEquity * 0.48 / stats.totalEquity) * 100).toFixed(0)}% of equity)` },
                     { label: 'Senti Trading Engine', icon: '🤖', detail: 'Active' },
                     { label: 'Active Strategies', icon: '📈', detail: `${stats.activeStrategies.length} running` },

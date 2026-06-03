@@ -57,3 +57,21 @@ src/
 - No environment loading — there are no `.env*` files and no `process.env` usage. If runtime config is needed, ask before adding env plumbing.
 - `public/` contains only static assets (logo, next/vercel/window SVGs, favicons).
 - `CLAUDE.md` is a one-line redirect to this file (`@AGENTS.md`). Edit here, not there.
+
+## Playwright MCP
+
+* Playwright MCP is available and should be preferred for browser interactions, UI validation, screenshots, navigation testing, and checking rendered page behavior.
+* Before implementing UI changes, inspect the current page with Playwright MCP when the task depends on visual layout, styling, or user interactions.
+* After modifying UI-related code, use Playwright MCP to verify the affected flow whenever possible.
+* Use Playwright MCP instead of reasoning about browser behavior from source code alone when verification is feasible.
+* For Next.js pages running locally, assume the development server is available at `http://localhost:3000` unless otherwise specified.
+
+### Common Playwright Tasks
+
+* Open pages and inspect rendered output.
+* Validate responsive layouts and visual regressions.
+* Test navigation, forms, dialogs, dropdowns, and interactive components.
+* Capture screenshots when useful for debugging.
+* Check browser console errors and failed network requests.
+* Verify App Router navigation behavior.
+

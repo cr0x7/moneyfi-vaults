@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  AreaChart, Area, BarChart, Bar,
+  AreaChart, Area,
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine,
 } from 'recharts'
 import { DeltaNeutralStats } from '@/data/strategyStats'
@@ -51,7 +51,7 @@ export default function DeltaNeutralStatsPanel({ stats }: Props) {
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#a78bfa', marginBottom: 4 }}>How Delta Neutral earns on HyperLiquid</div>
             <p style={{ fontSize: 12, color: '#666', lineHeight: 1.6 }}>
-              Equal <span style={{ color: '#3b82f6' }}>LONG</span> and <span style={{ color: '#f97316' }}>SHORT</span> perpetual positions cancel each other's price exposure.
+              Equal <span style={{ color: '#3b82f6' }}>LONG</span> and <span style={{ color: '#f97316' }}>SHORT</span> perpetual positions cancel each other&apos;s price exposure.
               Every 8 hours, HyperLiquid pays <strong style={{ color: '#a78bfa' }}>funding rate</strong> from the losing side to the winning side.
               When longs outnumber shorts, you collect as the short side — market direction is irrelevant.
             </p>

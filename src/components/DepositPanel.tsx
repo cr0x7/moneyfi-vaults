@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Vault, TokenSymbol, UserPosition } from '@/lib/types'
 import { formatCurrency, calcEstimatedEarnings } from '@/lib/utils'
 
@@ -30,7 +31,88 @@ const WITHDRAWAL_STEPS = [
 ]
 
 type FlowTab = 'deposit' | 'withdraw'
-type FlowState = 'form' | 'running' | 'done'
+
+const TOKEN_META: Partial<Record<TokenSymbol, { name: string; logo: string; color: string }>> = {
+  USDT: { name: 'Tether USD', logo: '/tokens/usdt.svg', color: '#26a17b' },
+  USDC: { name: 'USD Coin', logo: '/tokens/usdc.svg', color: '#2775ca' },
+}
+
+function TokenIcon({ symbol }: { symbol: TokenSymbol }) {
+  const meta = TOKEN_META[symbol]
+
+  if (meta) {
+    return <Image src={meta.logo} alt={`${symbol} logo`} width={20} height={20} style={{ borderRadius: '50%', display: 'block' }} />
+  }
+
+  return (
+    <span style={{
+      width: 20, height: 20, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      background: '#1a1a1a', border: '1px solid #333', color: '#888', fontSize: 8, fontWeight: 800,
+    }}>{symbol.slice(0, 2)}</span>
+  )
+}
+
+function TokenSelector({ value, tokens, onChange }: { value: TokenSymbol; tokens: TokenSymbol[]; onChange: (token: TokenSymbol) => void }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((next) => !next)}
+        style={{
+          height: 38, minWidth: 104, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          background: '#111', border: '1px solid #2a2a2a', borderRadius: 8, color: '#fff',
+          padding: '0 10px', fontSize: 13, fontWeight: 800, cursor: 'pointer', lineHeight: 1,
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <TokenIcon symbol={value} />
+          {value}
+        </span>
+        <span style={{ color: '#777', fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>⌄</span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute', top: 44, right: 0, zIndex: 20, minWidth: 168,
+            background: '#101010', border: '1px solid #2a2a2a', borderRadius: 8,
+            boxShadow: '0 14px 32px rgba(0,0,0,0.35)', padding: 4,
+          }}
+        >
+          {tokens.map((t) => {
+            const meta = TOKEN_META[t]
+            const active = t === value
+            return (
+              <button
+                type="button"
+                role="option"
+                aria-selected={active}
+                key={t}
+                onClick={() => { onChange(t); setOpen(false) }}
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '9px 10px',
+                  background: active ? '#1a1a1a' : 'transparent', border: 'none', borderRadius: 6,
+                  color: '#fff', cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <TokenIcon symbol={t} />
+                <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 800 }}>{t}</span>
+                  <span style={{ fontSize: 10, color: '#666' }}>{meta?.name ?? t}</span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function DepositPanel({ vault, position, operatorTimeline }: DepositPanelProps) {
   const isSenti = vault.category === 'TRADING'
@@ -136,11 +218,9 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
           {/* Amount input */}
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>AMOUNT</div>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '12px 14px' }}>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min $${vault.minDeposit.toLocaleString()}`} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
-              <select value={token} onChange={(e) => setToken(e.target.value as TokenSymbol)} style={{ background: '#1a1a1a', border: '1px solid #333', borderRadius: 6, color: '#fff', padding: '4px 8px', fontSize: 13, fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
-                {vault.supportedTokens.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '10px 10px 10px 14px' }}>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder={`Min $${vault.minDeposit.toLocaleString()}`} style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <TokenSelector value={token} tokens={vault.supportedTokens} onChange={setToken} />
             </div>
             {numAmount > 0 && numAmount < vault.minDeposit && (
               <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>Min deposit is ${vault.minDeposit.toLocaleString()}</div>
@@ -281,9 +361,9 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
         <>
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: 10, color: '#555', marginBottom: 8, letterSpacing: 0.8 }}>WITHDRAW AMOUNT</div>
-            <div style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '12px 14px' }}>
-              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
-              <span style={{ fontSize: 13, color: '#888', fontWeight: 600 }}>{token}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#0d0d0d', border: '1px solid #222', borderRadius: 8, padding: '10px 10px 10px 14px' }}>
+              <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" style={{ flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none', fontSize: 22, fontWeight: 700, color: '#fff' }} />
+              <TokenSelector value={token} tokens={vault.supportedTokens} onChange={setToken} />
             </div>
           </div>
 
@@ -291,7 +371,7 @@ export default function DepositPanel({ vault, position, operatorTimeline }: Depo
           {isSenti && (
             <div style={{ background: '#0d0d0d', border: '1px solid #333', borderRadius: 8, padding: 12, marginBottom: 16 }}>
               <div style={{ fontSize: 10, color: '#555', fontWeight: 600, letterSpacing: 0.8, marginBottom: 8 }}>WITHDRAWAL TIMELINE</div>
-              {WITHDRAWAL_STEPS.map((s, i) => (
+              {WITHDRAWAL_STEPS.map((s) => (
                 <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#444', flexShrink: 0 }} />
                   <span style={{ fontSize: 11, color: '#666' }}>{s}</span>

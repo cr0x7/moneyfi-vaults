@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="url(#petraGradient)"/>
+  <path fill="#fff" d="M272.8 105.4c72.7 0 129.8 52.6 143 116.6 8.3 40.3-2 85.2-38.2 121.5l-60.3 60.3-78.8-78.8 112.2-112.2H206.4v190.6H95.1V281.6c0-97.9 78.6-176.2 177.7-176.2Z"/>
+  <defs>
+    <linearGradient id="petraGradient" x1="69" y1="31" x2="424" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3B0FB8"/>
+      <stop offset="0.58" stop-color="#5736FF"/>
+      <stop offset="1" stop-color="#5B45FF"/>
+    </linearGradient>
+  </defs>
+</svg>

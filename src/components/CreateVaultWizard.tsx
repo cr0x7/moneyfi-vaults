@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { StrategyType, RiskLevel, TokenSymbol } from '@/lib/types'
 import { formatCurrency, calcEstimatedEarnings, riskBgColor } from '@/lib/utils'
@@ -18,6 +19,128 @@ const STRATEGY_OPTIONS: { id: StrategyType; name: string; description: string; b
 ]
 
 const STEP_LABELS = ['Strategy', 'Configure', 'Deposit', 'Preview']
+const DEPOSIT_TOKENS: TokenSymbol[] = ['USDT', 'USDC', 'APT']
+const TOKEN_META: Partial<Record<TokenSymbol, { name: string; logo: string; accent: string }>> = {
+  USDT: { name: 'Tether USD', logo: '/tokens/usdt.svg', accent: '#26a17b' },
+  USDC: { name: 'USD Coin', logo: '/tokens/usdc.svg', accent: '#2775ca' },
+  APT: { name: 'Aptos', logo: '/tokens/apt.svg', accent: '#ffffff' },
+}
+
+function TokenIcon({ symbol, size = 22 }: { symbol: TokenSymbol; size?: number }) {
+  const meta = TOKEN_META[symbol]
+
+  if (meta) {
+    return (
+      <Image
+        src={meta.logo}
+        alt={`${symbol} logo`}
+        width={size}
+        height={size}
+        style={{ width: size, height: size, borderRadius: '50%', objectFit: 'contain', display: 'block' }}
+      />
+    )
+  }
+
+  return (
+    <span style={{
+      width: size, height: size, borderRadius: '50%', background: '#1a1a1a', border: '1px solid #333',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#888', fontSize: 9, fontWeight: 800,
+    }}>{symbol.slice(0, 2)}</span>
+  )
+}
+
+function TokenSelector({ value, onChange }: { value: TokenSymbol; onChange: (token: TokenSymbol) => void }) {
+  const [open, setOpen] = useState(false)
+  const current = TOKEN_META[value]
+
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <button
+        type="button"
+        onClick={() => setOpen((next) => !next)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        style={{
+          minWidth: 132,
+          height: 44,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '0 12px',
+          borderRadius: 10,
+          border: `1px solid ${open ? '#00e67666' : '#2a2a2a'}`,
+          background: open ? '#101810' : '#151515',
+          color: '#fff',
+          cursor: 'pointer',
+          boxShadow: open ? '0 0 0 3px rgba(0,230,118,0.08)' : 'none',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <TokenIcon symbol={value} />
+          <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, lineHeight: 1 }}>{value}</span>
+            <span style={{ fontSize: 9, color: '#666', lineHeight: 1 }}>{current?.name}</span>
+          </span>
+        </span>
+        <span style={{ color: '#777', fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>⌄</span>
+      </button>
+
+      {open && (
+        <div
+          role="listbox"
+          style={{
+            position: 'absolute',
+            top: 50,
+            right: 0,
+            zIndex: 20,
+            width: 190,
+            padding: 5,
+            borderRadius: 10,
+            border: '1px solid #2a2a2a',
+            background: '#101010',
+            boxShadow: '0 16px 36px rgba(0,0,0,0.45)',
+          }}
+        >
+          {DEPOSIT_TOKENS.map((symbol) => {
+            const meta = TOKEN_META[symbol]
+            const active = symbol === value
+
+            return (
+              <button
+                key={symbol}
+                type="button"
+                role="option"
+                aria-selected={active}
+                onClick={() => { onChange(symbol); setOpen(false) }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px',
+                  border: 'none',
+                  borderRadius: 8,
+                  background: active ? '#0a1a0f' : 'transparent',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <TokenIcon symbol={symbol} />
+                <span style={{ flex: 1 }}>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>{symbol}</span>
+                  <span style={{ display: 'block', fontSize: 10, color: '#666' }}>{meta?.name}</span>
+                </span>
+                {active && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#00e676' }} />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function CreateVaultWizard() {
   const router = useRouter()
@@ -269,47 +392,39 @@ export default function CreateVaultWizard() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
+                gap: 12,
                 background: '#0d0d0d',
-                border: '1px solid #222',
-                borderRadius: 8,
-                padding: '12px 14px',
-                gap: 10,
+                border: '1px solid #262626',
+                borderRadius: 12,
+                padding: '12px',
+                boxShadow: amount > 0 ? '0 0 0 1px rgba(0,230,118,0.18), inset 0 1px 0 rgba(255,255,255,0.03)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
               }}
             >
-              <input
-                type="number"
-                value={deposit}
-                onChange={(e) => setDeposit(e.target.value)}
-                placeholder="0.00"
-                style={{
-                  flex: 1,
-                  background: 'none',
-                  border: 'none',
-                  outline: 'none',
-                  fontSize: 24,
-                  fontWeight: 700,
-                  color: '#fff',
-                }}
-              />
-              <select
-                value={token}
-                onChange={(e) => setToken(e.target.value as TokenSymbol)}
-                style={{
-                  background: '#1a1a1a',
-                  border: '1px solid #333',
-                  borderRadius: 6,
-                  color: '#fff',
-                  padding: '4px 8px',
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  outline: 'none',
-                }}
-              >
-                <option>USDT</option>
-                <option>USDC</option>
-                <option>APT</option>
-              </select>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <input
+                  type="number"
+                  value={deposit}
+                  onChange={(e) => setDeposit(e.target.value)}
+                  placeholder="0.00"
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: 28,
+                    fontWeight: 800,
+                    color: '#fff',
+                    lineHeight: 1.1,
+                  }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                  <TokenIcon symbol={token} size={14} />
+                  <span style={{ fontSize: 11, color: '#555' }}>
+                    {amount > 0 ? `≈ ${formatCurrency(amount)} USD` : 'Choose amount and token'}
+                  </span>
+                </div>
+              </div>
+              <TokenSelector value={token} onChange={setToken} />
             </div>
           </div>
 
