@@ -233,7 +233,33 @@ export default function VaultCard({ vault, userDeposited }: VaultCardProps) {
           )}
         </div>
 
-{/* User position — always rendered for equal card height */} <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${userDeposited ? '#1a3a2a' : '#1a1a1a'}`, display: 'flex', justifyContent: 'space-between' }}> <span style={{ fontSize: 11, color: '#555' }}>Your deposit</span> <span style={{ fontSize: 12, fontWeight: 700, color: userDeposited ? '#00e676' : '#444' }}>{userDeposited ? formatCurrency(userDeposited) : '$0.00'}</span> </div>
+        {/* CTA — Deposit button */}
+        <div style={{ marginTop: 12 }}>
+          <div
+            className="btn-primary"
+            style={{
+              width: '100%',
+              padding: '10px 0',
+              fontSize: 13,
+              letterSpacing: 0.8,
+              textAlign: 'center',
+              borderRadius: 8,
+              background: catMeta.color,
+              color: '#000',
+              fontWeight: 700,
+            }}
+          >
+            {userDeposited ? 'Manage ↗' : 'Deposit →'}
+          </div>
+        </div>
+
+        {/* User deposit — shown below CTA */}
+        {userDeposited && (
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #1a3a2a', display: 'flex', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 11, color: '#555' }}>Your deposit</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#00e676' }}>{formatCurrency(userDeposited)}</span>
+          </div>
+        )}
       </div>
     </Link>
   )
